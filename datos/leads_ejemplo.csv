@@ -1,0 +1,6 @@
+id_lead,nombre,apellido,correo,fecha_creacion,origen,programa,marca,estado
+1001,María,González,maria.g@example.com,2023-01-15,Facebook,Maestría en Educación,UTEL,Nuevo
+1002,Carlos,Martínez,carlos.m@example.com,2023-01-16,Google,Licenciatura en Administración,UTEG,Contactado
+1003,Ana,Rodríguez,ana.r@example.com,2023-01-17,Instagram,Doctorado en Psicología,UIN,Interesado
+1004,Juan,López,juan.l@example.com,2023-01-18,LinkedIn,Maestría en Finanzas,UTEL,Calificado
+1005,Laura,Pérez,laura.p@example.com,2023-01-19,Referido,Licenciatura en Derecho,UTEG,Matriculado 

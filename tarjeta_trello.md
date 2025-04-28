@@ -56,12 +56,11 @@ Una vez que tengamos los ejemplos de CSV, necesitaremos:
 ## Formato esperado de los CSV
 
 ### Para leads:
-- id_lead: Identificador único
+- id_lead: Identificador único (También tenemos nombre, apellido y correo electrónico)
 - fecha_creacion: Fecha de creación del lead
 - origen: Canal de captación
 - programa: Programa académico
 - marca: Marca educativa
-- costo: Costo de adquisición
 - estado: Estado del lead
 
 ### Para matrículas:
@@ -70,7 +69,6 @@ Una vez que tengamos los ejemplos de CSV, necesitaremos:
 - fecha_matricula: Fecha de matrícula
 - programa: Programa académico
 - marca: Marca educativa
-- valor_matricula: Valor de la matrícula
 
 ## Fecha límite
 [Fecha límite para completar la configuración inicial]
