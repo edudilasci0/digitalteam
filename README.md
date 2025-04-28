@@ -1,269 +1,247 @@
 # Sistema Predictor y Optimizador de Matrículas basado en CPA
 
-![Versión](https://img.shields.io/badge/versión-1.0.0-blue)
-![Python](https://img.shields.io/badge/Python-3.6+-green)
-![Licencia](https://img.shields.io/badge/licencia-MIT-yellow)
+## Introducción
 
-## 📋 Índice
-1. [Introducción](#introducción)
-2. [Características](#características)
-3. [Estructura del Proyecto](#estructura-del-proyecto)
-4. [Requisitos](#requisitos)
-5. [Instalación](#instalación)
-6. [Uso](#uso)
-7. [Archivos de Entrada](#archivos-de-entrada)
-8. [Reportes Generados](#reportes-generados)
-9. [Variables Configurables](#variables-configurables)
-10. [Solución de Problemas](#solución-de-problemas)
-11. [Contribuir](#contribuir)
+Sistema de optimización de campañas para instituciones educativas que permite predecir y maximizar el número de matrículas en función del CPA (Costo Por Adquisición). Facilita la gestión de leads, proyección de matrículas y optimización del presupuesto.
 
-## 🚀 Introducción
+**Nuevas funciones:** 
+- Integración con Google Sheets para facilitar la gestión de datos y toma de decisiones por parte del equipo de marketing.
+- **Análisis completo con simulación Monte Carlo** que calcula intervalos de confianza en predicciones.
+- **Dashboards interactivos en Power BI** con visualización de métricas de confianza.
 
-El Sistema Predictor y Optimizador de Matrículas es una herramienta creada para ayudar a equipos de marketing y comercial a predecir y optimizar el rendimiento de sus campañas de captación de matrículas educativas basándose en el CPA (Costo Por Adquisición).
+## Características
 
-> "Pasar de decisiones reactivas a decisiones proactivas basadas en ciencia de datos, para optimizar las matrículas logradas en convocatorias educativas controlando el CPA y maximizando la eficiencia de la inversión publicitaria."
+- Carga datos desde CSV/Excel o **directamente desde Google Sheets**
+- Calcula métricas clave: CPL, CPA, tasa de conversión
+- Analiza patrones de estacionalidad en leads y matrículas
+- Predice número de matrículas según tendencias históricas
+- **Simulaciones Monte Carlo para intervalos de confianza**
+- **Análisis de elasticidad** para optimizar inversión por canal
+- Genera reportes visuales (HTML, PNG, Power BI)
+- **Dashboard colaborativo** para decisiones de equipo
+- Integración bidireccional con Google Sheets
 
-## ✨ Características
-
-El sistema permite:
-- Cargar datos de leads y matrículas desde archivos CSV/Excel
-- Calcular métricas clave como CPL, CPA y Tasa de Conversión
-- Predecir el número final de matrículas basado en el avance de la convocatoria
-- Visualizar el rendimiento actual y proyectado de cada campaña
-- Controlar campañas con diferentes duraciones (6, 12 semanas, etc.)
-- Generar reportes visuales en formato PNG
-
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
-/
-├── datos/                      # Carpeta para archivos de datos
-│   ├── leads_matriculas_reales.csv        # Datos de leads y matrículas
-│   └── planificacion_quincenal.csv        # Planificación de medios con duraciones
-├── scripts/                    # Scripts Python del sistema
-│   ├── load_data.py            # Carga de datos CSV/Excel
-│   ├── validate_data.py        # Validación de estructura de datos
-│   ├── calculate_metrics.py    # Cálculo de métricas (CPL, CPA, etc.)
-│   ├── rule_based_predictor.py # Predictor basado en reglas
-│   ├── generate_report.py      # Generación de reportes visuales
-│   ├── export_powerbi.py       # Exportación para Power BI
-│   └── main.py                 # Script principal integrador
-├── salidas/                    # Carpeta donde se guardan los reportes generados
-├── docs/                       # Documentación
-│   └── manual_usuario.md       # Manual de usuario detallado
-├── modelos/                    # Modelos entrenados (para versión ML futura)
-├── cuadernos/                  # Jupyter notebooks para análisis exploratorio
-├── config/                     # Archivos de configuración
-├── .gitignore                  # Archivos a ignorar en control de versiones
-└── requirements.txt            # Dependencias del proyecto
+├── config/                # Archivos de configuración
+│   ├── credentials.json   # Credenciales de Google API
+│   └── google_sheets_config.json  # Configuración de hojas
+├── dashboard/             # Dashboards y visualizaciones
+│   ├── datos/             # Datos para dashboards
+│   │   ├── plantillas/    # Plantillas CSV
+│   │   ├── procesados/    # Datos procesados
+│   │   └── resultados_analisis/ # Resultados de análisis avanzados
+│   └── README.md          # Documentación de dashboard
+├── datos/
+│   ├── actual/            # Datos de la convocatoria actual
+│   ├── historico/         # Datos de convocatorias anteriores
+│   └── costos/            # Datos de costos e inversión
+├── scripts/
+│   ├── cargar_datos.py              # Carga de datos desde archivos
+│   ├── ejecutar_analisis_completo.py # Nuevo: Análisis integrado con Monte Carlo
+│   ├── sincronizar_sheets.py        # Integración con Google Sheets
+│   ├── dashboard_comercial.py       # Generación de dashboards
+│   ├── analisis_estacionalidad.py   # Análisis de patrones temporales
+│   ├── simulacion_montecarlo.py     # Simulaciones para intervalos de confianza
+│   └── otros scripts...
+├── salidas/               # Reportes y visualizaciones generadas
+├── logs/                  # Registros de actividad del sistema
+├── Modelo decisiones.md   # Guía para toma de decisiones
+└── dashboard/actualizar_dashboard_completo.md # Nuevo: Guía para análisis completo
 ```
 
-## 📋 Requisitos
+## Requisitos
 
 - Python 3.6 o superior
-- Librerías Python (instalables mediante `pip`):
+- Bibliotecas principales:
   - pandas
   - numpy
   - matplotlib
   - seaborn
-  - scikit-learn
-  - openpyxl
+  - gspread (para integración con Google Sheets)
+  - google-auth (para autenticación con API de Google)
 
-## 💻 Instalación
+## Instalación
 
-1. Clone este repositorio:
+1. Clonar el repositorio:
 ```bash
-git clone https://github.com/edudilasci0/digitalteam.git
-cd digitalteam
+git clone https://github.com/tu-usuario/predictor-matriculas.git
+cd predictor-matriculas
 ```
 
-2. Instale las dependencias necesarias:
+2. Instalar dependencias:
 ```bash
 pip install -r requirements.txt
 ```
 
-## 🔧 Uso
+3. Configurar integración con Google Sheets (opcional):
+```bash
+python scripts/sincronizar_sheets.py
+```
+Sigue las instrucciones en pantalla para completar la configuración.
 
-Para ejecutar el programa, navegue a la carpeta principal del proyecto y ejecute:
+## Uso
+
+### Método Tradicional (Archivos CSV)
 
 ```bash
-python scripts/main.py
+python scripts/cargar_datos.py --leads path/to/leads.csv --planificacion path/to/planning.csv
+python scripts/dashboard_comercial.py
 ```
 
-Por defecto, se generarán todos los tipos de reportes. También puede especificar formatos específicos:
+### Nuevo Método (Google Sheets)
+
+1. Ingresa los datos de inversión y campañas en la hoja "Datos de inversión diaria"
+2. Ejecuta la sincronización:
+```bash
+python scripts/sincronizar_sheets.py
+```
+3. Los resultados se actualizarán automáticamente en la hoja "Resultados" y "Dashboard"
+4. Los dashboards HTML detallados estarán disponibles en la carpeta `/salidas/`
+
+### Análisis Completo con Simulación Monte Carlo (NUEVO)
+
+Para un análisis integral que incluye predicciones, simulaciones Monte Carlo y métricas de confianza:
 
 ```bash
-# Solo generar reportes PNG
-python scripts/main.py --formato png
-
-# Solo generar archivo para Power BI
-python scripts/main.py --formato powerbi
-
-# Generar todos los reportes (predeterminado)
-python scripts/main.py --formato todos
+python scripts/ejecutar_analisis_completo.py
 ```
 
-Otros parámetros disponibles:
+Este script ejecuta secuencialmente:
+1. Carga de datos
+2. Análisis de estacionalidad
+3. Predicción de matrículas
+4. Simulación Monte Carlo (1000 iteraciones)
+5. Análisis de elasticidad
+6. Generación de métricas de confianza
+7. Actualización de datos para el dashboard
+
+Los resultados se guardan en `dashboard/datos/resultados_analisis/` listos para visualizar en Power BI.
+
+Para más detalles, consulte `dashboard/actualizar_dashboard_completo.md`.
+
+### Sincronización Automática
+
+Para configurar la sincronización automática diaria:
 ```bash
-python scripts/main.py --crm ruta/personalizada/leads.csv --plan ruta/personalizada/plan.csv --output carpeta/salida
+# Consulta las instrucciones según tu sistema operativo
+cat config/instrucciones_programacion.txt
 ```
 
-El sistema ejecutará el siguiente flujo de trabajo:
-1. Carga de datos de leads y matrículas desde archivos CSV
-2. Validación de estructura de datos
-3. Cálculo de métricas: CPL, CPA y Tasa de Conversión
-4. Predicción basada en duración de convocatorias
-5. Generación de reportes en los formatos solicitados
+## Google Sheets - Estructura y Uso
 
-## 📊 Archivos de Entrada
+La integración con Google Sheets incluye las siguientes hojas:
 
-El sistema requiere dos archivos de entrada principales:
+1. **Datos de inversión diaria** - Aquí el equipo ingresa los datos de campañas:
+   - Fecha, Canal, Inversión, Impresiones, Clics, etc.
 
-### 1. leads_matriculas_reales.csv
+2. **Leads y Matrículas** - Registro de leads y matrículas:
+   - ID, Fecha, Tipo, Canal, Estado, etc.
 
-Contiene los datos de leads y matrículas extraídos del CRM, con la siguiente estructura:
+3. **Resultados** - Actualizado automáticamente con:
+   - Leads reales vs predicciones
+   - Métricas de rendimiento (CPL, CPA)
+   - Proyecciones para próximos días
 
-| Columna | Descripción | Ejemplo |
-|---------|-------------|---------|
-| Fecha | Fecha del registro | 2023-01-01 |
-| Marca | Nombre de la institución educativa | Universidad A |
-| Canal | Canal de captación | Facebook |
-| Tipo | Lead o Matrícula | Lead |
-| Estado | Estado del registro | Contactado, Interesado, etc. |
-| ID Lead | Identificador único del lead (opcional) | 1001 |
+4. **Dashboard** - Resumen visual del estado actual:
+   - Progreso de la campaña
+   - Predicciones por canal
+   - Alertas y recomendaciones
 
-### 2. planificacion_quincenal.csv
+5. **Registro de Decisiones** - Para documentar acciones tomadas:
+   - Fecha, Decisión, Canales afectados, Responsable, etc.
 
-Contiene los datos de planificación de medios con la siguiente estructura:
+## Dashboard Power BI (NUEVO)
 
-| Columna | Descripción | Ejemplo |
-|---------|-------------|---------|
-| Quincena | Periodo de la planificación | 2023-01-01/2023-01-15 |
-| Marca | Nombre de la institución educativa | Universidad A |
-| Canal | Canal de captación | Facebook |
-| Presupuesto Asignado (USD) | Presupuesto para el periodo | 1000 |
-| CPL Objetivo (USD) | Costo por Lead objetivo | 10 |
-| Leads Estimados | Cantidad de leads estimados | 100 |
-| ID Convocatoria | Identificador de la convocatoria | CONV-A-2023-01 |
-| Fecha Inicio | Fecha de inicio de la convocatoria | 2023-01-01 |
-| Fecha Fin | Fecha de fin de la convocatoria | 2023-02-12 |
-| Duracion Semanas | Duración en semanas de la convocatoria | 6 |
+El sistema ahora incluye dashboards en Power BI con:
 
-## 📈 Reportes Generados
+1. **Dashboard Comercial**: Para el equipo de ventas
+   - KPIs fundamentales de seguimiento diario
+   - Leads pendientes y conversiones
+   - Visualización por programa
+
+2. **Dashboard Analítico**: Para equipo de marketing y dirección
+   - Análisis detallado por programa y comercial
+   - Distribución de leads y matrículas
+   - Métricas de confianza y proyecciones
+
+Para implementar el dashboard:
+1. Seguir las instrucciones en `docs/implementacion_dashboard.md`
+2. Ejecutar `python dashboard/actualizar_datos.py`
+
+## Intervalos de Confianza y Simulación Monte Carlo (NUEVO)
+
+El sistema ahora calcula intervalos de confianza para predicciones mediante:
+
+1. **Simulación Monte Carlo**: Genera 1000 escenarios posibles variando parámetros clave
+2. **Intervalos de confianza**: Calcula rangos al 80%, 90% y 95% de confianza
+3. **Métricas de precisión**: Evalúa la confianza de las predicciones
+
+Estos datos permiten:
+- Tomar decisiones basadas en la certeza de las predicciones
+- Considerar escenarios pesimistas y optimistas
+- Evaluar riesgos de forma cuantitativa
+
+## Archivos de Entrada
+
+### Si utilizas archivos CSV:
+
+- **leads.csv**: Registro de leads y matrículas con columnas: ID, Fecha, Tipo, Canal, etc.
+- **costos.csv**: Registro de inversión por canal con columnas: Fecha, Canal, Inversión, etc.
+
+### Si utilizas Google Sheets:
+
+Simplemente completa las hojas correspondientes en el spreadsheet creado automáticamente.
+
+## Reportes Generados
 
 El sistema genera varios tipos de reportes:
 
-### Reportes PNG
+1. **Dashboard HTML**: Visualización interactiva de métricas clave
+2. **Análisis de Estacionalidad**: Patrones históricos y predicciones
+3. **Google Sheets Dashboard**: Actualizado automáticamente para el equipo
+4. **Archivos PNG**: Gráficos de barras de progreso y comparaciones
+5. **Reportes de Confianza**: Métricas de precisión e intervalos de confianza
+6. **Visualizaciones Power BI**: Dashboards interactivos completos
 
-1. **CPL Report** (cpl_report_[fecha].png):
-   - Muestra el CPL Real vs Objetivo por Marca y Canal
-   - Compara el costo por lead actual con el objetivo planificado
+## Variables Configurables
 
-2. **CPA Report** (cpa_report_[fecha].png):
-   - Muestra el CPA Real por Marca y Canal
-   - Visualiza el costo por matrícula actual
+- **Rutas de archivos**: Configurable en `scripts/cargar_datos.py`
+- **Frecuencia de análisis**: Configurable en `scripts/analisis_estacionalidad.py`
+- **Integración con Google Sheets**: Configurable en `config/google_sheets_config.json`
+- **Parámetros de simulación**: Ajustables en `scripts/ejecutar_analisis_completo.py`
 
-3. **Conversion Report** (conversion_report_[fecha].png):
-   - Muestra la Tasa de Conversión por Marca y Canal
-   - Porcentaje de leads que se convierten en matrículas
-
-4. **Prediction Report** (prediction_report_[fecha].png):
-   - Compara Matrículas Actuales vs Esperadas por Marca y Canal
-   - Proyección de matrículas al final de la convocatoria
-
-5. **Convocation Progress Report** (conv_progress_report_[fecha].png):
-   - Muestra el progreso de cada convocatoria
-   - Incluye barras de progreso, porcentaje de avance y estado
-   - Permite visualizar el avance de convocatorias con diferentes duraciones
-
-### Reporte Power BI
-
-El sistema también puede generar un archivo Excel estructurado para importar en Power BI Online:
-
-1. **Archivo Excel para Power BI** (PowerBI_Matriculas_[fecha].xlsx):
-   - Contiene múltiples hojas organizadas como un modelo de datos relacional
-   - Tablas de hechos: Métricas y Predicciones
-   - Tablas de dimensiones: Tiempo, Convocatorias, Canales y Marcas
-
-2. **Instrucciones para Power BI** (Instrucciones_PowerBI.txt):
-   - Guía paso a paso para importar y configurar el modelo en Power BI
-   - Relaciones recomendadas entre tablas
-   - Sugerencias de visualizaciones
-
-### Uso del Reporte Power BI
-
-Para usar el archivo Excel generado en Power BI Online:
-
-1. Accede a Power BI desde tu cuenta de Microsoft 365/Outlook: https://app.powerbi.com
-2. Haz clic en "Mi área de trabajo" > "+ Nuevo" > "Conjunto de datos"
-3. Selecciona el archivo Excel generado por el sistema
-4. Crea un nuevo informe basado en este conjunto de datos
-5. Establece las relaciones entre tablas siguiendo las instrucciones
-6. Crea visualizaciones como:
-   - Gráficos de barras para CPL y CPA
-   - Tarjetas para KPIs principales
-   - Gráficos de líneas para tendencias
-   - Tablas detalladas por marca y canal
-   - Filtros por tiempo, marca, canal y estado de convocatoria
-
-## ⚙️ Variables Configurables
-
-El sistema permite modificar varias configuraciones para adaptarse a sus necesidades específicas:
-
-### En scripts/main.py:
-- **Rutas de archivos**: Puede modificar las rutas a los archivos de entrada y salida.
-```python
-ruta_archivo_crm = "data/leads_matriculas_reales.csv"
-ruta_archivo_planificacion = "data/planificacion_quincenal.csv"
-dir_salida = "outputs"
-```
-
-### En scripts/validate_data.py:
-- **Columnas requeridas**: Puede modificar las columnas que se validan en los archivos de entrada.
-```python
-columnas_requeridas = ['Fecha', 'Marca', 'Canal', 'Tipo', 'Estado']
-```
-
-### En scripts/rule_based_predictor.py:
-- **Lógica de predicción**: Puede ajustar la lógica para predecir matrículas.
-```python
-# Predicción actual basada en el porcentaje de avance de la convocatoria
-datos_prediccion['Leads Esperados Total'] = datos_prediccion['Leads Actuales'] / datos_prediccion['Porcentaje Avance Decimal']
-```
-
-### En scripts/generate_report.py:
-- **Estilo de gráficos**: Puede modificar colores, tamaños y estilos de los reportes visuales.
-```python
-def configurar_estilo_grafico():
-    sns.set(style="whitegrid")
-    plt.rcParams['figure.figsize'] = (12, 8)
-    plt.rcParams['font.size'] = 12
-```
-
-## ❓ Solución de Problemas
+## Resolución de Problemas
 
 ### Errores comunes:
 
-1. **Error al cargar archivo**: Verifique que los archivos existan en la ruta especificada y tengan el formato correcto.
+1. **Error de autenticación con Google Sheets**:
+   - Verifica que el archivo `config/credentials.json` existe
+   - Asegúrate de haber habilitado las APIs necesarias en Google Cloud Console
 
-2. **Columnas faltantes**: Asegúrese de que los archivos de entrada contengan todas las columnas requeridas.
+2. **No se actualizan los datos en Google Sheets**:
+   - Verifica que la hoja de cálculo existe y tiene la estructura correcta
+   - Comprueba los permisos de la cuenta de servicio
 
-3. **Error en formato de fechas**: Las fechas deben estar en formato YYYY-MM-DD.
+3. **Errores en la simulación Monte Carlo**:
+   - Revisa los logs en `/logs/analisis_completo_YYYYMMDD.log`
+   - Considera reducir el número de simulaciones si hay problemas de memoria
 
-4. **División por cero**: Puede ocurrir si no hay leads o si el porcentaje de avance es cero. El sistema intenta manejar estos casos pero verifique sus datos de entrada.
+## Guía de Toma de Decisiones
 
-5. **Convocatorias inconsistentes**: Asegúrese de que las fechas de inicio y fin de cada convocatoria son coherentes y la duración en semanas es correcta.
+Para instrucciones detalladas sobre cómo utilizar los datos para tomar decisiones de marketing, consulta el archivo `Modelo decisiones.md`.
 
-## 🤝 Contribuir
+## Contribución
 
 Si deseas contribuir a este proyecto:
 
-1. Haz un fork del repositorio
-2. Crea una rama para tu característica (`git checkout -b feature/nueva-funcionalidad`)
+1. Haz fork del repositorio
+2. Crea una rama para tu funcionalidad (`git checkout -b feature/nueva-funcionalidad`)
 3. Realiza tus cambios y haz commit (`git commit -m 'Añadir nueva funcionalidad'`)
 4. Sube los cambios a tu fork (`git push origin feature/nueva-funcionalidad`)
 5. Abre un Pull Request
 
----
+## Licencia
 
-Desarrollado por [Digital Team](https://github.com/edudilasci0/digitalteam)
+Este proyecto está licenciado bajo la Licencia MIT. Ver el archivo LICENSE para más detalles.
