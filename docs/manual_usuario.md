@@ -37,7 +37,7 @@ El sistema permite:
 
 ```
 /
-├── data/                       # Carpeta para archivos de datos
+├── datos/                      # Carpeta para archivos de datos
 │   ├── leads_matriculas_reales.csv        # Datos de leads y matrículas
 │   └── planificacion_quincenal.csv        # Planificación de medios con duraciones
 ├── scripts/                    # Scripts Python del sistema
@@ -46,10 +46,14 @@ El sistema permite:
 │   ├── calculate_metrics.py    # Cálculo de métricas (CPL, CPA, etc.)
 │   ├── rule_based_predictor.py # Predictor basado en reglas
 │   ├── generate_report.py      # Generación de reportes visuales
+│   ├── export_powerbi.py       # Exportación para Power BI
 │   └── main.py                 # Script principal integrador
-├── outputs/                    # Carpeta donde se guardan los reportes generados
+├── salidas/                    # Carpeta donde se guardan los reportes generados
 ├── docs/                       # Documentación
 │   └── manual_usuario.md       # Este manual
+├── modelos/                    # Modelos entrenados (para versión ML futura)
+├── cuadernos/                  # Jupyter notebooks para análisis exploratorio
+├── config/                     # Archivos de configuración
 ├── .gitignore                  # Archivos a ignorar en control de versiones
 └── requirements.txt            # Dependencias del proyecto
 ```
@@ -72,7 +76,25 @@ Para ejecutar el programa, navegue a la carpeta principal del proyecto y ejecute
 python scripts/main.py
 ```
 
-El programa leerá los archivos de datos de la carpeta `data/`, procesará la información y generará los reportes visuales en la carpeta `outputs/`.
+Por defecto, se generarán todos los tipos de reportes. También puede especificar formatos específicos:
+
+```bash
+# Solo generar reportes PNG
+python scripts/main.py --formato png
+
+# Solo generar archivo para Power BI
+python scripts/main.py --formato powerbi
+
+# Generar todos los reportes (predeterminado)
+python scripts/main.py --formato todos
+```
+
+Otros parámetros disponibles:
+```bash
+python scripts/main.py --crm ruta/personalizada/leads.csv --plan ruta/personalizada/plan.csv --output carpeta/salida
+```
+
+El programa leerá los archivos de datos de la carpeta `datos/`, procesará la información y generará los reportes en la carpeta `salidas/`.
 
 ## Archivos de Entrada
 
@@ -110,7 +132,9 @@ Contiene los datos de planificación de medios con la siguiente estructura:
 
 ## Reportes Generados
 
-El sistema genera cinco tipos de reportes visuales:
+El sistema genera varios tipos de reportes:
+
+### Reportes PNG
 
 1. **CPL Report** (cpl_report_[fecha].png):
    - Muestra el CPL Real vs Objetivo por Marca y Canal
@@ -132,6 +156,50 @@ El sistema genera cinco tipos de reportes visuales:
    - Muestra el progreso de cada convocatoria
    - Incluye barras de progreso, porcentaje de avance y estado
    - Permite visualizar el avance de convocatorias con diferentes duraciones
+
+### Reporte Power BI
+
+El sistema también puede generar un archivo Excel estructurado para importar en Power BI Online:
+
+1. **Archivo Excel para Power BI** (PowerBI_Matriculas_[fecha].xlsx):
+   - Contiene múltiples hojas organizadas como un modelo de datos relacional
+   - Tablas de hechos: Métricas y Predicciones
+   - Tablas de dimensiones: Tiempo, Convocatorias, Canales y Marcas
+
+2. **Instrucciones para Power BI** (Instrucciones_PowerBI.txt):
+   - Guía paso a paso para importar y configurar el modelo en Power BI
+   - Relaciones recomendadas entre tablas
+   - Sugerencias de visualizaciones
+
+### Uso del Reporte Power BI
+
+Para usar el archivo Excel generado en Power BI Online:
+
+1. Accede a Power BI desde tu cuenta de Microsoft 365/Outlook: https://app.powerbi.com
+2. Haz clic en "Mi área de trabajo" en el menú lateral
+3. Haz clic en el botón "+ Nuevo" en la esquina superior derecha
+4. Selecciona "Conjunto de datos"
+5. Navega y selecciona el archivo Excel generado por el sistema
+6. Haz clic en "Abrir"
+
+Para crear un informe a partir de estos datos:
+1. Busca el conjunto de datos recién creado
+2. Haz clic en el icono "Crear informe" junto al conjunto de datos
+
+La estructura óptima del modelo de datos es:
+- Relacionar "Hechos_Metricas" con "Dim_Canales" usando el campo "Canal"
+- Relacionar "Hechos_Metricas" con "Dim_Marcas" usando el campo "Marca"
+- Relacionar "Hechos_Predicciones" con "Dim_Convocatorias" usando "ID Convocatoria"
+- Relacionar "Hechos_Predicciones" con "Dim_Tiempo" usando "Fecha Reporte" y "Fecha"
+
+Visualizaciones recomendadas:
+- Gráfico de barras para CPL Real vs Objetivo
+- Gráfico de barras para CPA Real
+- Tarjetas para mostrar KPIs principales
+- Gráfico de líneas para tendencia de conversión
+- Gráfico de medidor para % de avance de convocatorias
+- Tabla con detalle de métricas por marca y canal
+- Filtros por fecha, marca, canal y estado de convocatoria
 
 ## Variables Configurables
 
@@ -183,4 +251,3 @@ def setup_plot_style():
 
 ---
 
-**Nota**: Se recomienda traducir el código fuente al español para facilitar su mantenimiento por el equipo local. Esto incluiría nombres de funciones, variables y comentarios. 

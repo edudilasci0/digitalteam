@@ -14,7 +14,7 @@ from generate_report import generar_todos_reportes
 from export_powerbi import crear_estructura_powerbi, generar_instrucciones_powerbi
 
 
-def ejecutar_pipeline(ruta_archivo_crm, ruta_archivo_planificacion, dir_salida="outputs", formato_reporte="png"):
+def ejecutar_pipeline(ruta_archivo_crm, ruta_archivo_planificacion, dir_salida="salidas", formato_reporte="png"):
     """
     Ejecuta el pipeline completo del sistema.
     
@@ -75,11 +75,11 @@ if __name__ == "__main__":
     
     # Crear parser para argumentos de línea de comandos
     parser = argparse.ArgumentParser(description='Sistema Predictor y Optimizador de Matrículas')
-    parser.add_argument('--crm', dest='ruta_crm', default="data/leads_matriculas_reales.csv", 
+    parser.add_argument('--crm', dest='ruta_crm', default="datos/leads_matriculas_reales.csv", 
                         help='Ruta al archivo CSV de leads y matrículas')
-    parser.add_argument('--plan', dest='ruta_plan', default="data/planificacion_quincenal.csv",
+    parser.add_argument('--plan', dest='ruta_plan', default="datos/planificacion_quincenal.csv",
                         help='Ruta al archivo CSV de planificación')
-    parser.add_argument('--output', dest='dir_salida', default="outputs",
+    parser.add_argument('--output', dest='dir_salida', default="salidas",
                         help='Directorio de salida para reportes')
     parser.add_argument('--formato', dest='formato', default="todos", choices=["png", "powerbi", "todos"],
                         help='Formato de reporte: png, powerbi o todos')

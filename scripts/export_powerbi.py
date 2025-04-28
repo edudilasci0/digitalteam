@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timedelta
 
 
-def crear_estructura_powerbi(dict_metricas, datos_prediccion, dir_salida="outputs"):
+def crear_estructura_powerbi(dict_metricas, datos_prediccion, dir_salida="salidas"):
     """
     Genera archivos Excel estructurados y optimizados para importar en Power BI Online.
     
@@ -187,7 +187,7 @@ def categorizar_canal(canal):
         return 'Otros'
 
 
-def generar_instrucciones_powerbi(archivo_excel, dir_salida="outputs"):
+def generar_instrucciones_powerbi(archivo_excel, dir_salida="salidas"):
     """
     Genera un archivo de texto con instrucciones para importar el Excel en Power BI Online.
     
@@ -249,8 +249,8 @@ if __name__ == "__main__":
     from rule_based_predictor import predecir_matriculas
     
     try:
-        datos_crm = cargar_datos_crm("../data/leads_matriculas_reales.csv")
-        datos_planificacion = cargar_datos_planificacion("../data/planificacion_quincenal.csv")
+        datos_crm = cargar_datos_crm("../datos/leads_matriculas_reales.csv")
+        datos_planificacion = cargar_datos_planificacion("../datos/planificacion_quincenal.csv")
         
         validar_datos_crm(datos_crm)
         validar_datos_planificacion(datos_planificacion)
@@ -259,10 +259,10 @@ if __name__ == "__main__":
         prediccion = predecir_matriculas(datos_crm, datos_planificacion)
         
         # Generar archivo para Power BI
-        archivo_excel = crear_estructura_powerbi(metricas, prediccion, "../outputs")
+        archivo_excel = crear_estructura_powerbi(metricas, prediccion, "../salidas")
         
         # Generar instrucciones
-        archivo_instrucciones = generar_instrucciones_powerbi(archivo_excel, "../outputs")
+        archivo_instrucciones = generar_instrucciones_powerbi(archivo_excel, "../salidas")
         
         print(f"Archivo de datos para Power BI generado: {archivo_excel}")
         print(f"Archivo de instrucciones generado: {archivo_instrucciones}")

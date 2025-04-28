@@ -37,7 +37,7 @@ El sistema permite:
 
 ```
 /
-├── data/                       # Carpeta para archivos de datos
+├── datos/                      # Carpeta para archivos de datos
 │   ├── leads_matriculas_reales.csv        # Datos de leads y matrículas
 │   └── planificacion_quincenal.csv        # Planificación de medios con duraciones
 ├── scripts/                    # Scripts Python del sistema
@@ -46,10 +46,14 @@ El sistema permite:
 │   ├── calculate_metrics.py    # Cálculo de métricas (CPL, CPA, etc.)
 │   ├── rule_based_predictor.py # Predictor basado en reglas
 │   ├── generate_report.py      # Generación de reportes visuales
+│   ├── export_powerbi.py       # Exportación para Power BI
 │   └── main.py                 # Script principal integrador
-├── outputs/                    # Carpeta donde se guardan los reportes generados
+├── salidas/                    # Carpeta donde se guardan los reportes generados
 ├── docs/                       # Documentación
 │   └── manual_usuario.md       # Manual de usuario detallado
+├── modelos/                    # Modelos entrenados (para versión ML futura)
+├── cuadernos/                  # Jupyter notebooks para análisis exploratorio
+├── config/                     # Archivos de configuración
 ├── .gitignore                  # Archivos a ignorar en control de versiones
 └── requirements.txt            # Dependencias del proyecto
 ```
@@ -86,12 +90,30 @@ Para ejecutar el programa, navegue a la carpeta principal del proyecto y ejecute
 python scripts/main.py
 ```
 
+Por defecto, se generarán todos los tipos de reportes. También puede especificar formatos específicos:
+
+```bash
+# Solo generar reportes PNG
+python scripts/main.py --formato png
+
+# Solo generar archivo para Power BI
+python scripts/main.py --formato powerbi
+
+# Generar todos los reportes (predeterminado)
+python scripts/main.py --formato todos
+```
+
+Otros parámetros disponibles:
+```bash
+python scripts/main.py --crm ruta/personalizada/leads.csv --plan ruta/personalizada/plan.csv --output carpeta/salida
+```
+
 El sistema ejecutará el siguiente flujo de trabajo:
 1. Carga de datos de leads y matrículas desde archivos CSV
 2. Validación de estructura de datos
 3. Cálculo de métricas: CPL, CPA y Tasa de Conversión
 4. Predicción basada en duración de convocatorias
-5. Generación de reportes visuales en la carpeta `outputs/`
+5. Generación de reportes en los formatos solicitados
 
 ## 📊 Archivos de Entrada
 
@@ -129,7 +151,9 @@ Contiene los datos de planificación de medios con la siguiente estructura:
 
 ## 📈 Reportes Generados
 
-El sistema genera cinco tipos de reportes visuales:
+El sistema genera varios tipos de reportes:
+
+### Reportes PNG
 
 1. **CPL Report** (cpl_report_[fecha].png):
    - Muestra el CPL Real vs Objetivo por Marca y Canal
@@ -151,6 +175,36 @@ El sistema genera cinco tipos de reportes visuales:
    - Muestra el progreso de cada convocatoria
    - Incluye barras de progreso, porcentaje de avance y estado
    - Permite visualizar el avance de convocatorias con diferentes duraciones
+
+### Reporte Power BI
+
+El sistema también puede generar un archivo Excel estructurado para importar en Power BI Online:
+
+1. **Archivo Excel para Power BI** (PowerBI_Matriculas_[fecha].xlsx):
+   - Contiene múltiples hojas organizadas como un modelo de datos relacional
+   - Tablas de hechos: Métricas y Predicciones
+   - Tablas de dimensiones: Tiempo, Convocatorias, Canales y Marcas
+
+2. **Instrucciones para Power BI** (Instrucciones_PowerBI.txt):
+   - Guía paso a paso para importar y configurar el modelo en Power BI
+   - Relaciones recomendadas entre tablas
+   - Sugerencias de visualizaciones
+
+### Uso del Reporte Power BI
+
+Para usar el archivo Excel generado en Power BI Online:
+
+1. Accede a Power BI desde tu cuenta de Microsoft 365/Outlook: https://app.powerbi.com
+2. Haz clic en "Mi área de trabajo" > "+ Nuevo" > "Conjunto de datos"
+3. Selecciona el archivo Excel generado por el sistema
+4. Crea un nuevo informe basado en este conjunto de datos
+5. Establece las relaciones entre tablas siguiendo las instrucciones
+6. Crea visualizaciones como:
+   - Gráficos de barras para CPL y CPA
+   - Tarjetas para KPIs principales
+   - Gráficos de líneas para tendencias
+   - Tablas detalladas por marca y canal
+   - Filtros por tiempo, marca, canal y estado de convocatoria
 
 ## ⚙️ Variables Configurables
 
