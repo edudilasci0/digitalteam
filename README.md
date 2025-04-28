@@ -338,3 +338,140 @@ Si desea contribuir a este proyecto:
 3. Realice sus cambios y haga commit (`git commit -m 'Añadir nueva funcionalidad'`)
 4. Suba los cambios a su fork (`git push origin feature/nueva-funcionalidad`)
 5. Abra un Pull Request
+
+## Preguntas Frecuentes Profesionales
+
+### 🎯 1. Sobre el propósito general
+
+**¿Cómo describirías en una frase la misión de este sistema para marketing digital?**  
+El Motor de Decisión es un sistema integral que automatiza la toma de decisiones basada en datos para campañas de captación de matrículas educativas, combinando análisis predictivo, simulación de escenarios y visualización avanzada para optimizar la inversión en marketing.
+
+**¿Cuál es la principal ventaja competitiva que nos da respecto a otros sistemas tradicionales de reporting?**  
+A diferencia de los sistemas tradicionales que solo reportan datos históricos, nuestro Motor de Decisión integra predicciones con intervalos de confianza, análisis de elasticidad y simulaciones Monte Carlo, permitiendo decisiones proactivas basadas en escenarios futuros probables, no solo en datos pasados.
+
+### 🎯 2. Sobre análisis y métricas que calcula
+
+**¿Qué métricas principales calcula automáticamente el sistema (CPL, CPA, conversión)?**  
+El sistema calcula automáticamente:
+- CPL (Costo por Lead)
+- CPA (Costo por Adquisición)
+- Tasa de conversión (leads a matrículas)
+- ROI por canal y programa
+- Elasticidad de demanda
+- Intervalos de confianza para predicciones
+- Desviaciones respecto a objetivos y patrones históricos
+
+**¿Cómo se calcula la predicción del cierre de convocatoria?**  
+La predicción del cierre se calcula mediante modelos de machine learning que consideran:
+- Patrones históricos de estacionalidad
+- Tasa de conversión actual vs. histórica
+- Velocidad de captación de leads
+- Factores de elasticidad por canal
+- Simulaciones Monte Carlo para generar intervalos de confianza
+
+**¿Qué tipo de alertas genera el sistema cuando detecta desvíos críticos?**  
+El sistema genera alertas para:
+- Desviaciones mayores al 20% de los objetivos de captación
+- Caídas significativas en tasas de conversión
+- Incrementos anormales en CPL o CPA
+- Patrones que se desvían significativamente de la estacionalidad histórica
+- Escenarios con alta probabilidad de no alcanzar objetivos
+
+**¿Se incluyen cálculos de proyección de matrículas bajo escenarios de mejora o empeoramiento?**  
+Sí, el sistema incluye simulaciones de escenarios optimistas, pesimistas y neutrales, permitiendo visualizar el impacto de mejoras o deterioros en tasas de conversión, CPL y otros factores clave.
+
+### 🎯 3. Sobre predicción y forecast
+
+**¿Cómo funciona el forecast dinámico hasta el cierre de convocatoria?**  
+El forecast dinámico:
+- Se actualiza automáticamente con cada nueva carga de datos
+- Ajusta las predicciones según el rendimiento actual vs. histórico
+- Incorpora factores de estacionalidad y tendencias recientes
+- Genera intervalos de confianza que se estrechan a medida que se acerca el cierre
+- Permite visualizar la probabilidad de alcanzar diferentes niveles de objetivos
+
+**¿Qué variables principales afectan la predicción de cierre?**  
+Las variables clave incluyen:
+- Velocidad actual de captación de leads
+- Tasa de conversión histórica y actual
+- Patrones de estacionalidad
+- Elasticidad de demanda por canal
+- Factores externos (competencia, economía, etc.)
+- Calidad de leads por origen
+
+**¿Qué pasa si la tasa de conversión mejora o empeora 5%? ¿El sistema puede simularlo?**  
+Sí, el sistema permite simular escenarios con diferentes tasas de conversión mediante el módulo de simulación de escenarios, mostrando el impacto en matrículas finales y ajustando las recomendaciones de inversión según la elasticidad de cada canal.
+
+### 🎯 4. Sobre modelado histórico y estacionalidad
+
+**¿Cómo compara el avance actual con el patrón de estacionalidad de campañas anteriores?**  
+El sistema:
+- Analiza patrones históricos de captación y conversión
+- Identifica períodos de alta/baja estacionalidad
+- Compara el rendimiento actual con el esperado según la estacionalidad
+- Ajusta las predicciones considerando si estamos en un período típicamente fuerte o débil
+- Visualiza la desviación respecto al patrón histórico esperado
+
+**¿El sistema puede detectar automáticamente si estamos por debajo o por encima del patrón histórico esperado?**  
+Sí, el sistema detecta automáticamente desviaciones significativas del patrón histórico y las clasifica en tres categorías:
+- POR DEBAJO: Rendimiento inferior al esperado según estacionalidad
+- DENTRO DEL RANGO: Rendimiento acorde a lo esperado
+- POR ENCIMA: Rendimiento superior al esperado
+
+### 🎯 5. Sobre elasticidad y simulación de escenarios
+
+**¿Qué impacto predice el sistema si subimos o bajamos el presupuesto un 10% o 20%?**  
+El sistema calcula la elasticidad de demanda por canal y programa, permitiendo simular el impacto de cambios en el presupuesto:
+- Para canales con elasticidad >1.0: Incrementos proporcionalmente mayores en leads
+- Para canales con elasticidad ~1.0: Cambios proporcionales
+- Para canales con elasticidad <1.0: Incrementos proporcionalmente menores
+- Recomendaciones específicas de reasignación basadas en elasticidades
+
+**¿La simulación de escenarios de elasticidad mantiene el CPL actual o permite variarlo manualmente?**  
+El sistema permite ambas opciones:
+- Simulación con CPL constante (para evaluar solo el impacto del volumen)
+- Simulación con CPL variable (para evaluar el impacto de cambios en eficiencia)
+- Personalización manual de parámetros para escenarios específicos
+
+### 🎯 6. Sobre gobernanza de datos y reporting
+
+**¿Cómo se organiza el flujo de carga de datos para proteger la calidad de la información?**  
+El sistema implementa un flujo de datos con múltiples capas de validación:
+- Verificación automática de columnas requeridas
+- Validación de tipos de datos y rangos
+- Detección de valores atípicos y anomalías
+- Registro detallado de errores y advertencias
+- Proceso de carga en etapas con puntos de control
+
+**¿Qué roles y accesos tiene cada equipo sobre los reportes y métricas?**  
+El sistema implementa tres niveles de acceso:
+- **Nivel Comercial**: Dashboard diario con KPIs esenciales y alertas
+- **Nivel Táctico**: Análisis detallado por canal, programa y marca
+- **Nivel Estratégico**: Visualización completa con todos los datos y análisis avanzados
+
+**¿Se puede exportar visualmente todo en formato consolidado para no compartir datos crudos?**  
+Sí, el sistema permite exportar resultados en múltiples formatos:
+- Dashboards interactivos en Power BI
+- Reportes PDF consolidados
+- Visualizaciones PNG/JPG para presentaciones
+- Exportaciones a Excel con datos agregados (no crudos)
+- Integración con Google Sheets para colaboración
+
+### 🎯 7. Sobre evolución futura
+
+**¿Qué funcionalidades están preparadas para agregar en una futura versión?**  
+El sistema está diseñado para incorporar:
+- Scoring de leads basado en comportamiento y características
+- Análisis de lifetime value por programa y marca
+- Automatización completa de carga de datos desde múltiples fuentes
+- Integración con sistemas de CRM y marketing automation
+- Análisis de sentimiento en interacciones con leads
+- Recomendaciones de optimización automáticas
+
+**¿Qué tan escalable es el sistema para incorporar nuevos análisis o nuevas marcas si crece la universidad?**  
+El sistema está diseñado con alta escalabilidad:
+- Arquitectura modular que permite añadir nuevos análisis sin modificar el núcleo
+- Configuración centralizada que facilita la incorporación de nuevas marcas
+- Procesamiento paralelo para manejar volúmenes crecientes de datos
+- Separación clara entre lógica de negocio y visualización
+- Capacidad de personalizar modelos por marca o programa
