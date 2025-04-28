@@ -1,0 +1,4 @@
+Fecha,ID_Campaña,Nombre_Campaña,Marca,Presupuesto_Total,Objetivo_Matriculas_Total,Fecha_Inicio,Fecha_Fin,Canales_Activos,Programas_Incluidos,Notas
+2023-07-01,CAM-2023-Q3,Campaña Q3 2023,UTEL,75000,120,2023-07-15,2023-09-15,Facebook|Google|LinkedIn|Instagram|Email,Maestría en Educación|Maestría en Administración|Licenciatura en Derecho,Enfoque en profesionales
+2023-07-01,CAM-2023-Q3,Campaña Q3 2023,UTEG,50000,80,2023-07-15,2023-09-15,Google|Instagram|Facebook|Email,Licenciatura en Administración|Licenciatura en Contabilidad|Maestría en Finanzas,Promoción especial egresados
+2023-07-01,CAM-2023-Q3,Campaña Q3 2023,UIN,40000,45,2023-07-15,2023-09-15,LinkedIn|Google|Twitter|Facebook,Doctorado en Psicología|Maestría en Psicología|Doctorado en Educación,Profesionales con experiencia 
