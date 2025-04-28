@@ -1,54 +1,73 @@
-# Sistema Predictor y Optimizador de Matrículas basado en CPA
+# Sistema Predictor y Optimizador de Matrículas
 
 ## Introducción
 
-Sistema de optimización de campañas para instituciones educativas que permite predecir y maximizar el número de matrículas en función del CPA (Costo Por Adquisición). Facilita la gestión de leads, proyección de matrículas y optimización del presupuesto.
+Sistema integral para la predicción y optimización de campañas de captación de matrículas educativas. Esta herramienta permite analizar datos históricos, predecir resultados futuros, y optimizar la inversión para maximizar el retorno. Está diseñado específicamente para equipos de marketing educativo y media planners.
 
-**Nuevas funciones:** 
-- Integración con Google Sheets para facilitar la gestión de datos y toma de decisiones por parte del equipo de marketing.
-- **Análisis completo con simulación Monte Carlo** que calcula intervalos de confianza en predicciones.
-- **Dashboards interactivos en Power BI** con visualización de métricas de confianza.
+## Características Principales
 
-## Características
-
-- Carga datos desde CSV/Excel o **directamente desde Google Sheets**
-- Calcula métricas clave: CPL, CPA, tasa de conversión
-- Analiza patrones de estacionalidad en leads y matrículas
-- Predice número de matrículas según tendencias históricas
-- **Simulaciones Monte Carlo para intervalos de confianza**
-- **Análisis de elasticidad** para optimizar inversión por canal
-- Genera reportes visuales (HTML, PNG, Power BI)
-- **Dashboard colaborativo** para decisiones de equipo
-- Integración bidireccional con Google Sheets
+- **Procesamiento de datos**: Carga, limpieza y transformación de datos de leads y matrículas
+- **Análisis predictivo**: Modelos de machine learning para predecir conversiones y matrículas
+- **Evaluación de modelos**: Comparación y selección del mejor modelo predictivo
+- **Visualización avanzada**: Gráficos interactivos para interpretación de resultados
+- **Análisis de estacionalidad**: Identificación de patrones temporales en datos históricos
+- **Simulación Monte Carlo**: Evaluación de escenarios con intervalos de confianza
+- **Generación de reportes**: Dashboards y reportes automatizados para toma de decisiones
+- **Integración con Google Sheets**: Sincronización automática de datos con hojas de cálculo
 
 ## Estructura del Proyecto
 
 ```
 ├── config/                # Archivos de configuración
-│   ├── credentials.json   # Credenciales de Google API
-│   └── google_sheets_config.json  # Configuración de hojas
-├── dashboard/             # Dashboards y visualizaciones
-│   ├── datos/             # Datos para dashboards
-│   │   ├── plantillas/    # Plantillas CSV
-│   │   ├── procesados/    # Datos procesados
-│   │   └── resultados_analisis/ # Resultados de análisis avanzados
-│   └── README.md          # Documentación de dashboard
-├── datos/
-│   ├── actual/            # Datos de la convocatoria actual
-│   ├── historico/         # Datos de convocatorias anteriores
-│   └── costos/            # Datos de costos e inversión
-├── scripts/
-│   ├── cargar_datos.py              # Carga de datos desde archivos
-│   ├── ejecutar_analisis_completo.py # Nuevo: Análisis integrado con Monte Carlo
-│   ├── sincronizar_sheets.py        # Integración con Google Sheets
-│   ├── dashboard_comercial.py       # Generación de dashboards
-│   ├── analisis_estacionalidad.py   # Análisis de patrones temporales
-│   ├── simulacion_montecarlo.py     # Simulaciones para intervalos de confianza
-│   └── otros scripts...
-├── salidas/               # Reportes y visualizaciones generadas
-├── logs/                  # Registros de actividad del sistema
-├── Modelo decisiones.md   # Guía para toma de decisiones
-└── dashboard/actualizar_dashboard_completo.md # Nuevo: Guía para análisis completo
+│   ├── config.yaml        # Configuración centralizada del sistema
+│   └── README.md          # Instrucciones de configuración
+├── datos/                 # Datos del sistema
+│   ├── actual/            # Datos de la campaña actual
+│   ├── historico/         # Datos de campañas anteriores
+│   ├── leads_matriculas_reales.csv  # Datos de ejemplo
+│   └── planificacion_quincenal.csv  # Datos de ejemplo
+├── docs/                  # Documentación
+│   ├── manual_usuario.md  # Manual detallado de uso
+│   └── implementacion_dashboard.md  # Guía de implementación
+├── logs/                  # Registros de ejecución del sistema
+├── output/                # Salidas generadas
+│   ├── graficos/          # Visualizaciones generadas
+│   ├── modelos/           # Modelos guardados
+│   └── reportes/          # Reportes en diferentes formatos
+├── scripts/               # Scripts de ejecución
+│   ├── analisis_estacionalidad.py  # Análisis de patrones temporales
+│   ├── analizar_elasticidad.py     # Análisis de elasticidad de demanda
+│   ├── analizar_rendimiento.py     # Análisis de rendimiento de campañas
+│   ├── calcular_metricas.py        # Cálculo de métricas clave
+│   ├── cargar_datos.py             # Cargador de datos en español
+│   ├── data_loader.py              # Cargador de datos en inglés
+│   ├── dashboard_comercial.py      # Generación de dashboard comercial
+│   ├── ejecutar_analisis_completo.py  # Análisis completo del sistema
+│   ├── ejecutar_sincronizacion.py  # Sincronización con Google Sheets
+│   ├── export_powerbi.py           # Exportación a Power BI
+│   ├── generar_reportes.py         # Generación de reportes
+│   ├── matriz_decision.py          # Matriz de decisión para optimización
+│   ├── modelo_estacionalidad.py    # Modelo de estacionalidad
+│   ├── optimizar_campañas.py       # Optimización de campañas
+│   ├── optimizar_presupuesto.py    # Optimización de presupuesto
+│   ├── planificar_campaña.py       # Planificación de campañas
+│   ├── predecir_matriculas.py      # Predicción de matrículas
+│   ├── proyectar_convocatoria.py   # Proyección de convocatorias
+│   ├── simular_mejora_conversion.py  # Simulación de mejoras
+│   ├── simulacion_montecarlo.py    # Simulación Monte Carlo
+│   ├── sincronizar_sheets.py       # Integración con Google Sheets
+│   ├── sistema_ajuste_automatico.py  # Ajuste automático de campañas
+│   └── validar_datos.py            # Validación de datos
+├── src/                   # Código fuente principal
+│   ├── analysis/          # Módulos de análisis
+│   ├── data/              # Módulos de procesamiento de datos
+│   ├── models/            # Módulos de modelado predictivo
+│   ├── utils/             # Utilidades generales
+│   ├── visualization/     # Módulos de visualización
+│   └── main.py            # Script principal del sistema
+├── Manual de Usuario.md   # Guía completa de uso
+├── Modelo decisiones.md   # Guía para interpretación y decisiones
+└── requirements.txt       # Dependencias del proyecto
 ```
 
 ## Requisitos
@@ -57,17 +76,22 @@ Sistema de optimización de campañas para instituciones educativas que permite 
 - Bibliotecas principales:
   - pandas
   - numpy
+  - scikit-learn
   - matplotlib
   - seaborn
-  - gspread (para integración con Google Sheets)
-  - google-auth (para autenticación con API de Google)
+  - joblib
+  - google-api-python-client
+  - google-auth-httplib2
+  - google-auth-oauthlib
+  - openpyxl
+  - pyyaml
 
 ## Instalación
 
 1. Clonar el repositorio:
 ```bash
-git clone https://github.com/tu-usuario/predictor-matriculas.git
-cd predictor-matriculas
+git clone https://github.com/tu-usuario/sistema-predictor-matriculas.git
+cd sistema-predictor-matriculas
 ```
 
 2. Instalar dependencias:
@@ -75,173 +99,242 @@ cd predictor-matriculas
 pip install -r requirements.txt
 ```
 
-3. Configurar integración con Google Sheets (opcional):
+3. Configurar el sistema:
 ```bash
-python scripts/sincronizar_sheets.py
-```
-Sigue las instrucciones en pantalla para completar la configuración.
-
-## Uso
-
-### Método Tradicional (Archivos CSV)
-
-```bash
-python scripts/cargar_datos.py --leads path/to/leads.csv --planificacion path/to/planning.csv
-python scripts/dashboard_comercial.py
+mkdir -p datos/actual datos/historico output/reportes output/modelos output/graficos logs
 ```
 
-### Nuevo Método (Google Sheets)
+4. Configurar la integración con Google Sheets (opcional):
+   - Sigue las instrucciones en `config/README.md`
 
-1. Ingresa los datos de inversión y campañas en la hoja "Datos de inversión diaria"
-2. Ejecuta la sincronización:
-```bash
-python scripts/sincronizar_sheets.py
-```
-3. Los resultados se actualizarán automáticamente en la hoja "Resultados" y "Dashboard"
-4. Los dashboards HTML detallados estarán disponibles en la carpeta `/salidas/`
+## Uso Básico
 
-### Análisis Completo con Simulación Monte Carlo (NUEVO)
-
-Para un análisis integral que incluye predicciones, simulaciones Monte Carlo y métricas de confianza:
+### Ejecución del sistema completo
 
 ```bash
-python scripts/ejecutar_analisis_completo.py
+python src/main.py --datos-leads datos/actual/leads.csv --datos-matriculas datos/actual/matriculas.csv --guardar-resultados
 ```
 
-Este script ejecuta secuencialmente:
-1. Carga de datos
-2. Análisis de estacionalidad
-3. Predicción de matrículas
-4. Simulación Monte Carlo (1000 iteraciones)
-5. Análisis de elasticidad
-6. Generación de métricas de confianza
-7. Actualización de datos para el dashboard
+### Sincronización con Google Sheets
 
-Los resultados se guardan en `dashboard/datos/resultados_analisis/` listos para visualizar en Power BI.
-
-Para más detalles, consulte `dashboard/actualizar_dashboard_completo.md`.
-
-### Sincronización Automática
-
-Para configurar la sincronización automática diaria:
 ```bash
-# Consulta las instrucciones según tu sistema operativo
-cat config/instrucciones_programacion.txt
+python scripts/ejecutar_sincronizacion.py
 ```
 
-## Google Sheets - Estructura y Uso
+### Opciones de línea de comandos
 
-La integración con Google Sheets incluye las siguientes hojas:
+```
+--datos-leads          Ruta al archivo CSV de leads
+--datos-matriculas     Ruta al archivo CSV de matrículas
+--config               Ruta al archivo de configuración personalizado
+--guardar-resultados   Guarda los resultados en disco
+--dir-salida           Directorio para guardar resultados
+--tipo-modelo          Tipo de modelo a entrenar (linear, ridge, lasso, random_forest, gradient_boosting)
+--target               Columna objetivo para el modelo (por defecto: convertido)
+--solo-carga           Solo cargar y preprocesar datos, sin entrenar modelo
+--solo-evaluar         Evaluar modelo ya entrenado sin volver a entrenar
+--ruta-modelo          Ruta a un modelo guardado para evaluar
+```
 
-1. **Datos de inversión diaria** - Aquí el equipo ingresa los datos de campañas:
-   - Fecha, Canal, Inversión, Impresiones, Clics, etc.
+## Módulos Principales
 
-2. **Leads y Matrículas** - Registro de leads y matrículas:
-   - ID, Fecha, Tipo, Canal, Estado, etc.
+### Procesador de Datos
 
-3. **Resultados** - Actualizado automáticamente con:
-   - Leads reales vs predicciones
-   - Métricas de rendimiento (CPL, CPA)
-   - Proyecciones para próximos días
+El sistema proporciona dos versiones del cargador de datos:
+- `scripts/cargar_datos.py`: Versión en español
+- `scripts/data_loader.py`: Versión en inglés
 
-4. **Dashboard** - Resumen visual del estado actual:
-   - Progreso de la campaña
-   - Predicciones por canal
-   - Alertas y recomendaciones
+Ambas versiones ofrecen las mismas funcionalidades:
+- Cargar datos desde archivos CSV
+- Validar la estructura y contenido de los datos
+- Convertir tipos de datos
+- Manejar errores de formato o archivos no encontrados
 
-5. **Registro de Decisiones** - Para documentar acciones tomadas:
-   - Fecha, Decisión, Canales afectados, Responsable, etc.
+```python
+# Ejemplo con la versión en español
+from scripts.cargar_datos import cargar_datos_crm, cargar_datos_planificacion
 
-## Dashboard Power BI (NUEVO)
+# Cargar datos
+datos_crm = cargar_datos_crm("datos/actual/leads_matriculas_reales.csv")
+datos_planificacion = cargar_datos_planificacion("datos/actual/planificacion_quincenal.csv")
 
-El sistema ahora incluye dashboards en Power BI con:
+# Ejemplo con la versión en inglés
+from scripts.data_loader import load_crm_data, load_planning_data
 
-1. **Dashboard Comercial**: Para el equipo de ventas
-   - KPIs fundamentales de seguimiento diario
-   - Leads pendientes y conversiones
-   - Visualización por programa
+# Load data
+crm_data = load_crm_data("datos/actual/leads_matriculas_reales.csv")
+planning_data = load_planning_data("datos/actual/planificacion_quincenal.csv")
+```
 
-2. **Dashboard Analítico**: Para equipo de marketing y dirección
-   - Análisis detallado por programa y comercial
-   - Distribución de leads y matrículas
-   - Métricas de confianza y proyecciones
+### Gestor de Modelos
 
-Para implementar el dashboard:
-1. Seguir las instrucciones en `docs/implementacion_dashboard.md`
-2. Ejecutar `python dashboard/actualizar_datos.py`
+El módulo `model_manager.py` permite:
+- Entrenar diferentes tipos de modelos predictivos
+- Evaluar el rendimiento de los modelos
+- Guardar y cargar modelos entrenados
+- Realizar predicciones con modelos entrenados
+- Analizar la importancia de características
 
-## Intervalos de Confianza y Simulación Monte Carlo (NUEVO)
+```python
+from src.models.model_manager import ModelManager
 
-El sistema ahora calcula intervalos de confianza para predicciones mediante:
+# Inicializar gestor de modelos
+model_manager = ModelManager(model_name="modelo_conversion")
 
-1. **Simulación Monte Carlo**: Genera 1000 escenarios posibles variando parámetros clave
-2. **Intervalos de confianza**: Calcula rangos al 80%, 90% y 95% de confianza
-3. **Métricas de precisión**: Evalúa la confianza de las predicciones
+# Entrenar modelo
+metricas = model_manager.train(
+    datos_procesados, 
+    target_column="convertido",
+    model_type="random_forest", 
+    categorical_features=["origen", "programa", "marca"]
+)
 
-Estos datos permiten:
-- Tomar decisiones basadas en la certeza de las predicciones
-- Considerar escenarios pesimistas y optimistas
-- Evaluar riesgos de forma cuantitativa
+# Guardar modelo
+ruta_modelo = model_manager.save()
 
-## Archivos de Entrada
+# Cargar modelo previamente guardado
+model_manager.load("output/modelos/modelo_conversion.pkl")
 
-### Si utilizas archivos CSV:
+# Realizar predicciones
+predicciones = model_manager.predict(nuevos_datos)
+```
 
-- **leads.csv**: Registro de leads y matrículas con columnas: ID, Fecha, Tipo, Canal, etc.
-- **costos.csv**: Registro de inversión por canal con columnas: Fecha, Canal, Inversión, etc.
+### Evaluador de Modelos
 
-### Si utilizas Google Sheets:
+El módulo `evaluador_modelos.py` proporciona:
+- Evaluación de modelos de regresión y clasificación
+- Comparación de diferentes modelos
+- Visualización de resultados (predicciones vs. reales, residuos)
+- Almacenamiento y carga de métricas de evaluación
 
-Simplemente completa las hojas correspondientes en el spreadsheet creado automáticamente.
+```python
+from src.models.evaluador_modelos import EvaluadorModelos
 
-## Reportes Generados
+# Inicializar evaluador
+evaluador = EvaluadorModelos()
 
-El sistema genera varios tipos de reportes:
+# Evaluar modelo de regresión
+metricas_regresion = evaluador.evaluar_regresion(
+    y_true=y_test, 
+    y_pred=predicciones,
+    nombre_modelo="random_forest"
+)
 
-1. **Dashboard HTML**: Visualización interactiva de métricas clave
-2. **Análisis de Estacionalidad**: Patrones históricos y predicciones
-3. **Google Sheets Dashboard**: Actualizado automáticamente para el equipo
-4. **Archivos PNG**: Gráficos de barras de progreso y comparaciones
-5. **Reportes de Confianza**: Métricas de precisión e intervalos de confianza
-6. **Visualizaciones Power BI**: Dashboards interactivos completos
+# Visualizar resultados
+evaluador.graficar_predicciones_vs_reales(
+    y_true=y_test, 
+    y_pred=predicciones,
+    nombre_modelo="random_forest"
+)
 
-## Variables Configurables
+# Comparar modelos
+comparacion = evaluador.comparar_modelos(
+    modelos=["linear", "ridge", "random_forest"],
+    metricas_clave=["rmse", "r2"]
+)
+```
 
-- **Rutas de archivos**: Configurable en `scripts/cargar_datos.py`
-- **Frecuencia de análisis**: Configurable en `scripts/analisis_estacionalidad.py`
-- **Integración con Google Sheets**: Configurable en `config/google_sheets_config.json`
-- **Parámetros de simulación**: Ajustables en `scripts/ejecutar_analisis_completo.py`
+### Visualizador
 
-## Resolución de Problemas
+El módulo `visualizador.py` permite:
+- Generar gráficos de series temporales
+- Visualizar distribuciones de variables
+- Crear gráficos de barras para categorías
+- Generar gráficos de dispersión
+- Visualizar matrices de correlación
+- Crear gráficos multilinea para comparaciones
 
-### Errores comunes:
+```python
+from src.visualizacion.visualizador import Visualizador
 
-1. **Error de autenticación con Google Sheets**:
-   - Verifica que el archivo `config/credentials.json` existe
-   - Asegúrate de haber habilitado las APIs necesarias en Google Cloud Console
+# Inicializar visualizador
+visualizador = Visualizador()
 
-2. **No se actualizan los datos en Google Sheets**:
-   - Verifica que la hoja de cálculo existe y tiene la estructura correcta
-   - Comprueba los permisos de la cuenta de servicio
+# Gráfico de serie temporal
+visualizador.graficar_serie_temporal(
+    datos=datos_temporales,
+    columna_fecha="fecha_creacion",
+    columna_valor="conteo",
+    titulo="Evolución de leads por semana"
+)
 
-3. **Errores en la simulación Monte Carlo**:
-   - Revisa los logs en `/logs/analisis_completo_YYYYMMDD.log`
-   - Considera reducir el número de simulaciones si hay problemas de memoria
+# Gráfico de barras por categoría
+visualizador.graficar_barras(
+    datos=datos_procesados,
+    columna_categoria="origen",
+    columna_valor="costo",
+    titulo="Costo por origen"
+)
+```
 
-## Guía de Toma de Decisiones
+## Configuración
 
-Para instrucciones detalladas sobre cómo utilizar los datos para tomar decisiones de marketing, consulta el archivo `Modelo decisiones.md`.
+El sistema utiliza un archivo de configuración centralizado (`config/config.yaml`) que permite ajustar:
+
+- Rutas de directorios de datos, salida y logs
+- Parámetros de análisis (frecuencia, periodos mínimos)
+- Configuraciones de modelos y simulaciones
+- Opciones de integración con Google Sheets y Power BI
+
+Para cargar una configuración personalizada:
+
+```bash
+python src/main.py --config mi_configuracion.yaml
+```
+
+## Integración con Google Sheets
+
+El sistema incluye integración con Google Sheets para:
+
+- Sincronizar datos de leads y matrículas
+- Actualizar planificación de campañas
+- Exportar resultados y predicciones
+
+Para configurar la integración:
+
+1. Sigue las instrucciones en `config/README.md`
+2. Ejecuta el script de sincronización:
+```bash
+python scripts/ejecutar_sincronizacion.py
+```
+
+## Documentación Adicional
+
+Para instrucciones detalladas sobre el uso del sistema, consulte:
+
+- [Manual de Usuario](Manual%20de%20Usuario.md): Guía completa para usuarios del sistema
+- [Modelo de Decisiones](Modelo%20decisiones.md): Guía para interpretar resultados y tomar decisiones basadas en datos
+- [Implementación de Dashboard](docs/implementacion_dashboard.md): Guía para implementar dashboards interactivos
+
+## Solución de Problemas
+
+### Errores comunes
+
+1. **"No se encuentra el módulo X"**:
+   - Asegúrese de estar ejecutando desde la raíz del proyecto
+   - Verifique que ha instalado todas las dependencias
+
+2. **"Error al cargar los datos"**:
+   - Verifique que los archivos existen en las rutas especificadas
+   - Asegúrese de que los archivos tienen el formato correcto (CSV)
+   - Revise que contienen las columnas requeridas
+
+3. **"Error al entrenar el modelo"**:
+   - Verifique que los datos contienen suficientes observaciones
+   - Asegúrese de que no hay valores faltantes en características importantes
+   - Revise los logs para mensajes de error específicos
+
+4. **"Error de autenticación con Google Sheets"**:
+   - Verifique que ha configurado correctamente las credenciales
+   - Asegúrese de que las hojas de cálculo están compartidas con la cuenta de servicio
+   - Revise los permisos de la API de Google Sheets
 
 ## Contribución
 
-Si deseas contribuir a este proyecto:
+Si desea contribuir a este proyecto:
 
-1. Haz fork del repositorio
-2. Crea una rama para tu funcionalidad (`git checkout -b feature/nueva-funcionalidad`)
-3. Realiza tus cambios y haz commit (`git commit -m 'Añadir nueva funcionalidad'`)
-4. Sube los cambios a tu fork (`git push origin feature/nueva-funcionalidad`)
-5. Abre un Pull Request
-
-## Licencia
-
-Este proyecto está licenciado bajo la Licencia MIT. Ver el archivo LICENSE para más detalles.
+1. Haga un fork del repositorio
+2. Cree una rama para su funcionalidad (`git checkout -b feature/nueva-funcionalidad`)
+3. Realice sus cambios y haga commit (`git commit -m 'Añadir nueva funcionalidad'`)
+4. Suba los cambios a su fork (`git push origin feature/nueva-funcionalidad`)
+5. Abra un Pull Request

@@ -1,556 +1,579 @@
-# Manual de Usuario - Sistema Predictor y Optimizador de Matrículas
+# Manual de Usuario - Sistema Predictor de Matrículas
 
 ## Índice
 
 1. [Introducción](#introducción)
 2. [Instalación](#instalación)
-3. [Google Sheets - Configuración y Uso](#google-sheets---configuración-y-uso)
-4. [Trabajando con Archivos CSV (método tradicional)](#trabajando-con-archivos-csv-método-tradicional)
-5. [Dashboard Comercial](#dashboard-comercial)
-6. [Análisis de Estacionalidad](#análisis-de-estacionalidad)
-7. [Análisis Completo y Simulación Monte Carlo (NUEVO)](#análisis-completo-y-simulación-monte-carlo-nuevo)
-8. [Dashboards Power BI (NUEVO)](#dashboards-power-bi-nuevo)
-9. [Automatización de tareas](#automatización-de-tareas)
-10. [Guía de resolución de problemas](#guía-de-resolución-de-problemas)
-11. [Preguntas frecuentes](#preguntas-frecuentes)
+3. [Estructura del Sistema](#estructura-del-sistema)
+4. [Flujo de Trabajo Básico](#flujo-de-trabajo-básico)
+5. [Módulos Principales](#módulos-principales)
+   - [Procesador de Datos](#procesador-de-datos)
+   - [Gestor de Modelos](#gestor-de-modelos)
+   - [Evaluador de Modelos](#evaluador-de-modelos)
+   - [Visualizador](#visualizador)
+6. [Línea de Comandos](#línea-de-comandos)
+7. [Visualizaciones y Reportes](#visualizaciones-y-reportes)
+8. [Análisis de Resultados](#análisis-de-resultados)
+9. [Preguntas Frecuentes](#preguntas-frecuentes)
+10. [Solución de Problemas](#solución-de-problemas)
 
 ## Introducción
 
-El Sistema Predictor y Optimizador de Matrículas es una herramienta diseñada para equipos de marketing educativo que permite:
+El Sistema Predictor de Matrículas es una herramienta para equipos de marketing educativo diseñada para:
 
-- Predecir resultados de campañas basándose en datos históricos
-- Visualizar el progreso actual contra objetivos
-- Recibir recomendaciones para optimizar presupuestos de medios
-- Tomar decisiones basadas en datos sobre la gestión de campañas
-- **NUEVO:** Analizar intervalos de confianza en predicciones
-- **NUEVO:** Visualizar datos en dashboards interactivos Power BI
+- Analizar datos históricos y actuales de leads y matrículas
+- Construir modelos predictivos para estimar conversiones futuras
+- Generar visualizaciones que faciliten la toma de decisiones
+- Evaluar el rendimiento de diferentes modelos predictivos
+- Optimizar la asignación de recursos en campañas
 
-Este manual está dirigido a tres tipos de usuarios:
-- **Media planners**: Encargados de planificar y optimizar campañas
-- **Analistas de datos**: Responsables de mantener el sistema y generar informes
-- **Directores de marketing**: Quienes supervisan los resultados y toman decisiones estratégicas
+Este manual explica cómo utilizar el sistema desde su instalación hasta la interpretación de resultados.
 
 ## Instalación
 
 ### Requisitos previos
 
 - Python 3.6 o superior
-- Acceso a internet para la sincronización con Google Sheets
-- Permisos para crear credenciales de Google API (solo para configuración inicial)
-- **NUEVO:** Power BI Desktop (para visualizaciones avanzadas)
+- Pip (gestor de paquetes de Python)
+- Espacio en disco para almacenar datos y modelos
 
 ### Pasos de instalación
 
-1. Descargar el código fuente:
+1. Clone el repositorio:
 ```bash
-git clone https://github.com/tu-usuario/predictor-matriculas.git
-cd predictor-matriculas
+git clone https://github.com/tu-usuario/sistema-predictor-matriculas.git
+cd sistema-predictor-matriculas
 ```
 
-2. Instalar dependencias:
+2. Instale las dependencias:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Configurar Google Sheets (solo primera vez):
+3. Cree las carpetas necesarias:
 ```bash
-python scripts/sincronizar_sheets.py
+mkdir -p datos/actual datos/historico output/reportes output/modelos output/graficos logs
 ```
 
-4. Seguir las instrucciones en pantalla para:
-   - Crear un proyecto en Google Cloud Console
-   - Habilitar APIs necesarias
-   - Crear y descargar credenciales
-   - Colocar archivo de credenciales en la carpeta correcta
-
-5. **NUEVO:** Configurar Power BI (para visualizaciones avanzadas):
-   - Instalar Power BI Desktop
-   - Seguir instrucciones en `docs/implementacion_dashboard.md`
-
-## Google Sheets - Configuración y Uso
-
-### Configuración inicial
-
-Después de ejecutar `python scripts/sincronizar_sheets.py` por primera vez:
-
-1. El sistema creará automáticamente una hoja de cálculo en Google Sheets
-2. La URL de la hoja se mostrará en la terminal - guárdala y compártela con tu equipo
-3. Por defecto, cualquier persona con el enlace puede ver la hoja, pero solo la cuenta que la creó puede editarla
-4. Para permitir edición a otros miembros del equipo:
-   - Abre la hoja en Google Sheets
-   - Haz clic en "Compartir" en la esquina superior derecha
-   - Añade los correos electrónicos de los miembros del equipo con permisos de "Editor"
-
-### Estructura de hojas
-
-El sistema crea las siguientes hojas:
-
-1. **Datos de inversión diaria**
-   - Aquí se ingresan los datos de costos e inversión por canal
-   - Columnas: Fecha, Canal, Inversión (€), Impresiones, Clics, CTR (%), CPC (€), Conversiones, CPL (€), Observaciones
-   - **Responsabilidad**: Media planner / Analista de medios
-
-2. **Leads y Matrículas**
-   - Registro de leads y matrículas generados
-   - Columnas: ID, Fecha, Hora, Tipo, Canal, Campaña, Nombre, Email, Teléfono, Programa, Estado
-   - **Responsabilidad**: Analista de datos / Coordinador CRM
-
-3. **Resultados**
-   - Actualizado automáticamente con predicciones del sistema
-   - **No editar manualmente** - Se sobrescribe en cada sincronización
-
-4. **Dashboard**
-   - Resumen visual del estado de la campaña
-   - **No editar manualmente** - Se sobrescribe en cada sincronización
-
-5. **Registro de Decisiones**
-   - Bitácora de decisiones tomadas por el equipo
-   - Columnas: Fecha, Estado Campaña, Decisión Tomada, Canales Afectados, Cambio en Presupuesto, Responsable, Resultado Esperado, Seguimiento
-   - **Responsabilidad**: Todo el equipo
-
-### Instrucciones para media planners
-
-Como media planner, tu principal interacción será:
-
-1. **Actualizar datos de inversión diaria**:
-   - Completa la hoja "Datos de inversión diaria" con información de tus campañas
-   - Es crucial mantener actualizados los datos de inversión, especialmente para canales pagados
-   - Se recomienda actualizar diariamente o al menos 3 veces por semana
-
-2. **Consultar resultados y predicciones**:
-   - Revisa la hoja "Dashboard" para ver el estado general de la campaña
-   - Consulta la hoja "Resultados" para ver predicciones detalladas por canal
-   - Los valores predichos para las próximas semanas te ayudarán a planificar ajustes
-
-3. **Registrar decisiones**:
-   - En la hoja "Registro de Decisiones", documenta cada cambio significativo:
-     - Aumento o reducción de presupuesto
-     - Pausado o activación de canales
-     - Cambios en creatividades o audiencias
-   - Esto permite evaluar posteriormente el impacto de tus decisiones
-
-### Sincronización
-
-Para actualizar las predicciones después de ingresar nuevos datos:
-
+4. Verifique la instalación ejecutando:
 ```bash
-python scripts/sincronizar_sheets.py
+python src/main.py --solo-carga
 ```
 
-Esto realizará:
-- Lectura de datos ingresados en Google Sheets
-- Generación de nuevas predicciones basadas en datos actualizados
-- Actualización de las hojas "Resultados" y "Dashboard"
-- Generación de reportes HTML detallados (accesibles en la carpeta `/salidas/`)
+## Estructura del Sistema
 
-## Trabajando con Archivos CSV (método tradicional)
+El sistema está organizado en módulos específicos, cada uno con una responsabilidad definida:
 
-Si prefieres no utilizar Google Sheets, puedes seguir usando el sistema con archivos CSV:
+- **Procesador de Datos** (`src/data/procesador_datos.py`): Carga, limpia y transforma datos
+- **Gestor de Modelos** (`src/models/model_manager.py`): Entrena y gestiona modelos predictivos
+- **Evaluador de Modelos** (`src/models/evaluador_modelos.py`): Evalúa y compara rendimiento de modelos
+- **Visualizador** (`src/visualizacion/visualizador.py`): Genera gráficos y visualizaciones
+- **Configuración** (`src/utils/config.py`): Gestiona parámetros de configuración
+- **Logging** (`src/utils/logging.py`): Maneja registros de actividad y errores
 
-1. Prepara tus archivos:
-   - `leads_matriculas_actual.csv`: Datos de leads y matrículas actuales
-   - `leads_matriculas_historicos.csv`: Datos históricos para comparación
-   - `costos_campanas.csv`: Datos de inversión por canal
+Además, la estructura de directorios está organizada de la siguiente manera:
 
-2. Coloca los archivos en las carpetas correspondientes:
-   - `/datos/actual/`
-   - `/datos/historico/`
-   - `/datos/costos/`
+- `datos/`: Contiene archivos de datos de entrada
+- `output/`: Almacena resultados, modelos y visualizaciones
+- `logs/`: Guarda registros de ejecución y errores
+- `config/`: Archivos de configuración
+- `src/`: Código fuente del sistema
 
-3. Ejecuta los scripts individualmente:
-```bash
-python scripts/dashboard_comercial.py
-python scripts/analisis_estacionalidad.py
-```
+## Flujo de Trabajo Básico
 
-4. Revisa los reportes generados en la carpeta `/salidas/`
+El flujo de trabajo típico para utilizar el sistema es:
 
-## Dashboard Comercial
+1. **Preparación de datos**: Coloque sus archivos de leads y matrículas en formato CSV en la carpeta `datos/actual/`
+2. **Procesamiento inicial**: Ejecute el sistema para cargar y preprocesar los datos
+3. **Entrenamiento de modelos**: Entrene diferentes modelos predictivos
+4. **Evaluación de modelos**: Compare el rendimiento de los modelos
+5. **Visualización de resultados**: Genere gráficos y reportes
+6. **Análisis y decisiones**: Utilice los resultados para tomar decisiones informadas
 
-### Comprendiendo el dashboard
-
-El dashboard comercial proporciona una visión completa del estado actual de la campaña, incluyendo:
-
-1. **Barras de progreso**:
-   - Compara el tiempo transcurrido vs. leads captados vs. matrículas
-   - Color verde: Por encima del objetivo
-   - Color amarillo: Dentro del rango esperado
-   - Color rojo: Por debajo del objetivo
-
-2. **Comparación con estimación**:
-   - Gráfico de líneas que muestra leads acumulados vs. proyección
-   - Área sombreada que representa el rango estimado
-   - Línea vertical que marca la fecha actual
-
-3. **Observaciones y recomendaciones**:
-   - Estado general (POR DEBAJO, DENTRO DEL RANGO, POR ENCIMA)
-   - Recomendaciones específicas según el estado
-   - Métricas clave y diferencias porcentuales
-
-### Interpretación del estado
-
-Para interpretar correctamente el dashboard:
-
-- **POR DEBAJO** → Rendimiento inferior al esperado
-  - Requiere intervención inmediata
-  - Redistribuir presupuesto hacia canales mejor performantes
-  - Revisar calidad de leads y mensajes
-
-- **DENTRO DEL RANGO** → Rendimiento según lo esperado
-  - Realizar optimizaciones menores
-  - Monitorear indicadores clave semanalmente
-  - Mantener estrategia general
-
-- **POR ENCIMA** → Rendimiento superior al esperado
-  - Capitalizar el éxito
-  - Evaluar posible reasignación de recursos
-  - Documentar factores de éxito para futuras campañas
-
-## Análisis de Estacionalidad
-
-### Comprendiendo el análisis de estacionalidad
-
-El análisis de estacionalidad permite identificar patrones temporales en la captación de leads y matrículas, incluyendo:
-
-1. **Descomposición estacional**:
-   - Componente de tendencia (dirección general)
-   - Componente estacional (patrones recurrentes)
-   - Componente residual (variación no explicada)
-
-2. **Índices estacionales**:
-   - Valores que indican periodos de alta o baja demanda
-   - Útiles para planificar inversión y recursos
-
-3. **Predicciones futuras**:
-   - Proyecciones basadas en patrones históricos
-   - Intervalos de confianza para las estimaciones
-
-### Uso en la planificación
-
-Utiliza el análisis de estacionalidad para:
-
-- Planificar presupuestos de marketing considerando épocas de alta y baja demanda
-- Ajustar objetivos de lead generation según patrones estacionales
-- Preparar al equipo comercial para picos de actividad
-- Planificar promociones o incentivos en periodos de baja actividad natural
-
-## Análisis Completo y Simulación Monte Carlo (NUEVO)
-
-### Comprendiendo el análisis completo
-
-El análisis completo ejecuta en secuencia todas las herramientas analíticas del sistema, incluyendo:
-
-1. **Análisis de estacionalidad**: Identifica patrones temporales en leads y matrículas
-2. **Predicción de matrículas**: Entrena modelos predictivos basados en datos históricos
-3. **Simulación Monte Carlo**: Ejecuta 1000 simulaciones para calcular intervalos de confianza
-4. **Análisis de elasticidad**: Determina sensibilidad a diferentes factores y canales
-5. **Métricas de confianza**: Calcula y guarda indicadores de fiabilidad de predicciones
-
-### Ejecutando el análisis completo
-
-Para ejecutar todos los análisis en un solo paso:
+### Ejemplo de flujo completo
 
 ```bash
-python scripts/ejecutar_analisis_completo.py
+# 1. Preparar datos (archivos CSV en datos/actual/)
+
+# 2. Procesar datos y entrenar modelo
+python src/main.py --datos-leads datos/actual/leads.csv --datos-matriculas datos/actual/matriculas.csv --tipo-modelo random_forest --guardar-resultados
+
+# 3. Evaluar modelo guardado
+python src/main.py --ruta-modelo output/modelos/modelo_principal_random_forest_20230615_120000.pkl --solo-evaluar
+
+# 4. Analizar resultados en la carpeta output/
 ```
 
-El proceso completo puede tardar entre 5-10 minutos dependiendo del volumen de datos y la capacidad de procesamiento. Al finalizar, los resultados se guardan en `dashboard/datos/resultados_analisis/` y están listos para visualizar en Power BI.
+## Módulos Principales
+
+### Procesador de Datos
 
-### Comprendiendo los resultados
+El módulo `procesador_datos.py` permite trabajar con archivos de leads y matrículas.
+
+#### Funcionalidades principales:
 
-Los archivos generados incluyen:
+- **Cargar datos**: Importar archivos CSV o Excel
+- **Validar datos**: Verificar columnas requeridas y estructura
+- **Limpiar datos**: Eliminar duplicados y manejar valores nulos
+- **Unir datos**: Combinar información de leads y matrículas
+- **Crear características**: Generar nuevas variables para modelado
+
+#### Columnas requeridas:
+
+Para **leads**:
+- `id_lead`: Identificador único
+- `fecha_creacion`: Fecha de creación del lead
+- `origen`: Canal de captación
+- `programa`: Programa académico
+- `marca`: Marca educativa
+- `costo`: Costo de adquisición
+- `estado`: Estado del lead
+
+Para **matrículas**:
+- `id_matricula`: Identificador de matrícula
+- `id_lead`: Identificador del lead asociado
+- `fecha_matricula`: Fecha de matrícula
+- `programa`: Programa académico
+- `marca`: Marca educativa
+- `valor_matricula`: Valor de la matrícula
+
+#### Ejemplo de uso avanzado:
+
+```python
+from src.data.procesador_datos import ProcesadorDatos
+
+# Inicializar procesador
+procesador = ProcesadorDatos()
 
-- `estacionalidad_leads.csv`: Índices estacionales para leads
-- `estacionalidad_matriculas.csv`: Índices estacionales para matrículas
-- `predicciones_matriculas.csv`: Predicciones futuras
-- `intervalos_confianza.csv`: Intervalos de confianza de predicciones
-- `muestreo_simulaciones.csv`: Muestra de las simulaciones Monte Carlo
-- `elasticidad_factores.csv`: Análisis de elasticidad por factores
-- `recomendaciones_inversion.csv`: Recomendaciones de inversión
-- `resumen_confianza.csv`: Resumen de métricas de confianza
+# Cargar datos
+datos_leads = procesador.cargar_datos("datos/actual/leads.csv")
+datos_matriculas = procesador.cargar_datos("datos/actual/matriculas.csv")
+
+# Validar estructura
+leads_valido, columnas_faltantes = procesador.validar_datos(datos_leads, 'leads')
+if not leads_valido:
+    print(f"Columnas faltantes: {columnas_faltantes}")
+
+# Limpiar y convertir tipos
+datos_leads = procesador.limpiar_datos(datos_leads)
+datos_leads = procesador.convertir_tipos_datos(datos_leads, 'leads')
+datos_matriculas = procesador.limpiar_datos(datos_matriculas)
+datos_matriculas = procesador.convertir_tipos_datos(datos_matriculas, 'matriculas')
 
-### Interpretación de intervalos de confianza
-
-Los intervalos de confianza indican el rango en el que, con cierta probabilidad, se encontrará el valor real:
-
-- **Intervalo al 80%**: Rango donde esperamos que esté el resultado con un 80% de probabilidad
-- **Intervalo al 90%**: Rango más amplio con mayor certeza (90% de probabilidad)
-- **Intervalo al 95%**: Rango más conservador con 95% de probabilidad
-
-**Ejemplo de interpretación**:
-- Si la predicción es 100 matrículas con un intervalo al 90% de [85-115], significa que hay un 90% de probabilidad de que el resultado final esté entre 85 y 115 matrículas.
-- Un intervalo más estrecho indica mayor confianza en la predicción.
-- Un intervalo muy amplio sugiere mayor incertidumbre.
-
-### Métricas de confianza
-
-El sistema calcula varias métricas para evaluar la confianza en las predicciones:
-
-1. **R²**: Indica qué porcentaje de la variación se explica por el modelo
-   - >0.8: Excelente confianza
-   - 0.6-0.8: Buena confianza
-   - <0.6: Confianza moderada
-
-2. **MAPE** (Error Porcentual Absoluto Medio):
-   - <10%: Excelente precisión
-   - 10-20%: Buena precisión
-   - >20%: Precisión moderada
-
-3. **Amplitud relativa del intervalo**:
-   - <20% de la predicción: Alta certidumbre
-   - 20-40% de la predicción: Certidumbre moderada
-   - >40% de la predicción: Alta incertidumbre
-
-### Personalización del análisis
-
-Para modificar parámetros del análisis, edite el archivo `scripts/ejecutar_analisis_completo.py`:
-
-- **Número de simulaciones**: Ajuste `num_simulaciones=1000` (más simulaciones = mayor precisión pero más tiempo)
-- **Variabilidad en simulaciones**: Ajuste `variabilidad=0.15` (15% por defecto)
-- **Horizonte de predicción**: Ajuste `horizonte_meses=6` para cambiar el periodo futuro a predecir
-
-## Dashboards Power BI (NUEVO)
-
-### Configuración inicial
-
-Para configurar los dashboards Power BI:
-
-1. Siga las instrucciones detalladas en `docs/implementacion_dashboard.md`
-2. Ejecute el análisis completo para generar todos los datos necesarios:
-   ```bash
-   python scripts/ejecutar_analisis_completo.py
-   ```
-3. Abra Power BI Desktop y cargue el modelo predefinido o cree uno siguiendo las instrucciones
-4. Conecte a los datos en `dashboard/datos/procesados/` y `dashboard/datos/resultados_analisis/`
-
-### Dashboard Comercial (para equipo de ventas)
-
-El Dashboard Comercial está diseñado específicamente para el equipo de ventas y muestra:
-
-1. **Panel general**:
-   - % de logro de objetivos
-   - Leads pendientes de gestión
-   - Tasa de conversión actual
-
-2. **Evolución temporal**:
-   - Gráfico de líneas con tendencia
-   - Comparativa con periodos anteriores
-
-3. **Rendimiento por programa**:
-   - Listado de programas con % de logro
-   - Clasificación de programas (Top/Bottom performers)
-
-Este dashboard está optimizado para uso diario y seguimiento operativo.
-
-### Dashboard Analítico (para marketing/dirección)
-
-El Dashboard Analítico proporciona análisis en profundidad para toma de decisiones estratégicas:
-
-1. **Panel general**:
-   - KPIs globales (leads, matrículas, % logro)
-   - Métricas de confianza e intervalos de predicción
-
-2. **Análisis por programa**:
-   - Gráfico de dispersión (volumen vs conversión)
-   - Matriz detallada con todas las métricas
-   - Mapa de calor de rendimiento temporal
-
-3. **Análisis de simulación**:
-   - Distribución de resultados Monte Carlo
-   - Visualización de escenarios (optimista/pesimista)
-   - Rangos de confianza por programa
-
-4. **Análisis de elasticidad**:
-   - Sensibilidad por canal y factor
-   - Recomendaciones de inversión
-
-Este dashboard está diseñado para análisis profundo y planificación estratégica.
-
-### Actualización de datos
-
-Para actualizar los datos en Power BI:
-
-1. Ejecute el análisis completo si desea actualizar todas las métricas:
-   ```bash
-   python scripts/ejecutar_analisis_completo.py
-   ```
-
-2. O actualice solo los datos básicos del dashboard:
-   ```bash
-   python dashboard/actualizar_datos.py
-   ```
-
-3. En Power BI Desktop, haga clic en "Actualizar" para cargar los nuevos datos
-
-### Consejos para Power BI
-
-- Utilice los filtros y segmentadores para analizar datos específicos
-- Use el formato condicional para identificar rápidamente valores problemáticos
-- Aproveche los tooltips enriquecidos al pasar el cursor sobre los elementos
-- Configure alertas en Power BI Service para recibir notificaciones automáticas
-
-## Automatización de tareas
-
-### Configurar sincronización automática
-
-Para automatizar la sincronización diaria:
-
-#### En Windows:
-
-1. Abre el Programador de tareas
-2. Clic en "Crear tarea básica"
-3. Nombre: "Sincronización Google Sheets"
-4. Selecciona la frecuencia (Diariamente)
-5. Configura la hora de inicio (recomendado: 8:00 AM)
-6. En Acción, selecciona "Iniciar un programa"
-7. Programa/script: `python`
-8. Argumentos: ruta completa a `scripts/ejecutar_sincronizacion.py`
-9. Finaliza el asistente
-
-#### En macOS o Linux:
-
-1. Abre Terminal
-2. Ejecuta: `crontab -e`
-3. Añade la siguiente línea para ejecutar cada 12 horas:
-   ```
-   0 8,20 * * * /usr/bin/python3 /ruta/completa/scripts/ejecutar_sincronizacion.py
-   ```
-4. Guarda y sal del editor
-
-### Automatizar análisis completo (NUEVO)
-
-Para automatizar el análisis completo diario:
-
-#### En Windows:
-
-1. Abre el Programador de tareas
-2. Clic en "Crear tarea básica"
-3. Nombre: "Análisis Completo Predictivo"
-4. Selecciona la frecuencia (Diariamente)
-5. Configura la hora de inicio (recomendado: 1:00 AM)
-6. En Acción, selecciona "Iniciar un programa"
-7. Programa/script: `python`
-8. Argumentos: ruta completa a `scripts/ejecutar_analisis_completo.py`
-9. Finaliza el asistente
-
-#### En macOS o Linux:
-
-1. Abre Terminal
-2. Ejecuta: `crontab -e`
-3. Añade la siguiente línea para ejecutar cada noche a la 1 AM:
-   ```
-   0 1 * * * /usr/bin/python3 /ruta/completa/scripts/ejecutar_analisis_completo.py
-   ```
-4. Guarda y sal del editor
-
-### Automatizar reportes especiales
-
-Para automatizar la generación de reportes especiales:
-
-1. Crea un script personalizado que:
-   - Llame a los módulos necesarios
-   - Genere reportes específicos
-   - Envíe por correo los resultados (opcional)
-
-2. Programa su ejecución regular:
-   - Semanal para reportes de rendimiento
-   - Mensual para análisis de tendencias
-   - Trimestral para evaluación estratégica
-
-## Guía de resolución de problemas
-
-### Problemas comunes y soluciones
-
-1. **"Error al conectar con Google Sheets"**
-   - Verifica que existe el archivo `config/credentials.json`
-   - Asegúrate de que las APIs de Google Sheets y Drive están habilitadas
-   - Comprueba que la cuenta de servicio tiene permisos en la hoja
-
-2. **"No se encuentran datos suficientes para generar predicciones"**
-   - Verifica que las hojas "Datos de inversión diaria" y "Leads y Matrículas" tienen datos
-   - Asegúrate de que las fechas están en formato correcto (YYYY-MM-DD)
-   - Comprueba que existen datos históricos en `datos/historico/`
-
-3. **"Error en simulación de Monte Carlo"**:
-   - Verifique los logs en `logs/analisis_completo_YYYYMMDD.log`
-   - Intente reducir el número de simulaciones en `scripts/ejecutar_analisis_completo.py`
-   - Asegúrese de que hay suficiente memoria disponible
-
-4. **"No se cargan los datos en Power BI"**:
-   - Verifique que el análisis completo se ejecutó correctamente
-   - Compruebe que las rutas en Power BI coinciden con su estructura de carpetas
-   - Verifique que los tipos de datos en Power BI son correctos
-
-### Consulta de logs
-
-Para diagnosticar problemas más complejos:
-
-1. Revisa los archivos de log en la carpeta `/logs/`:
-   - `sincronizacion_sheets.log`: Detalles de la sincronización con Google Sheets
-   - `sincronizacion_auto.log`: Registros de ejecuciones automáticas programadas
-   - `analisis_completo_YYYYMMDD.log`: Detalles del análisis completo y simulación
-
-2. Busca mensajes de error específicos:
-   - ERROR: Indica un problema grave que impidió la operación
-   - WARNING: Señala posibles problemas que no detuvieron la ejecución
-   - INFO: Proporciona información sobre el proceso normal
-
-## Preguntas frecuentes
-
-### Sobre Google Sheets
-
-**P: ¿Puedo modificar manualmente las hojas "Resultados" o "Dashboard"?**
-R: No es recomendable, ya que se sobrescriben en cada sincronización. Usa la hoja "Registro de Decisiones" para comentarios o notas.
-
-**P: ¿Cuántas personas pueden editar la hoja simultáneamente?**
-R: Google Sheets permite edición colaborativa de múltiples usuarios, pero es recomendable coordinar los tiempos para evitar conflictos.
-
-**P: ¿La información es confidencial en Google Sheets?**
-R: Por defecto, solo personas con el enlace pueden ver la hoja. Para mayor seguridad, comparte la hoja solo con correos específicos y no con el enlace público.
-
-### Sobre sincronización y automatización
-
-**P: ¿Con qué frecuencia debo sincronizar los datos?**
-R: Idealmente, una vez al día para mantener las predicciones actualizadas. En periodos críticos de la campaña, puede ser útil sincronizar dos veces al día.
-
-**P: ¿Puedo programar envíos automáticos de los reportes?**
-R: El sistema actual no incluye envío por email, pero puedes extenderlo usando módulos como `smtplib` para enviar reportes automáticamente.
-
-**P: ¿Qué pasa si se cae la conexión durante la sincronización?**
-R: El sistema implementa manejo de errores para evitar datos corruptos. Si se interrumpe, simplemente vuelve a ejecutar la sincronización.
-
-### Sobre predicciones y análisis
-
-**P: ¿Qué tan precisas son las predicciones?**
-R: La precisión depende de la calidad y cantidad de datos históricos. Con buenos datos históricos, la precisión suele estar entre 80-90%.
-
-**P: ¿Cómo mejoro la precisión de las predicciones?**
-R: Mantén datos históricos limpios y detallados, actualiza frecuentemente los datos actuales, y documenta factores externos que puedan afectar los resultados.
-
-**P: ¿El sistema considera factores externos como vacaciones o eventos especiales?**
-R: No automáticamente. Es importante registrar estos factores en la columna "Observaciones" de la hoja "Datos de inversión diaria" para contextualizar los análisis.
-
-### Sobre análisis completo y simulación (NUEVO)
-
-**P: ¿Cuánto tiempo tarda en ejecutarse el análisis completo?**
-R: Dependiendo del volumen de datos y la capacidad de procesamiento, entre 5-10 minutos. Las simulaciones Monte Carlo son la parte más intensiva.
-
-**P: ¿Qué tan precisos son los intervalos de confianza?**
-R: Los intervalos reflejan la variabilidad inherente al modelo y los datos. Para intervalos más precisos, mejore la calidad de los datos históricos y ajuste los parámetros de variabilidad.
-
-**P: ¿Puedo usar los dashboards sin Power BI?**
-R: Sí, los datos procesados se guardan en formato CSV y pueden visualizarse con otras herramientas como Excel, Tableau o Google Data Studio.
-
-**P: ¿Cómo interpreto las recomendaciones de elasticidad?**
-R: Indican qué canales responderían mejor a cambios en la inversión. Mayor elasticidad significa que un pequeño incremento en inversión generará un mayor incremento porcentual en leads.
-
-### Sobre Power BI (NUEVO)
-
-**P: ¿Necesito licencia Power BI Pro?**
-R: Para uso personal o dentro de un equipo pequeño, Power BI Desktop (gratuito) es suficiente. Para compartir en toda la organización o configurar actualizaciones automáticas en la nube, se requiere Power BI Pro.
-
-**P: ¿Cómo comparto los dashboards con mi equipo?**
-R: Puede publicar en Power BI Service (requiere licencia) o compartir el archivo .pbix directamente. También puede exportar como PDF para informes estáticos.
-
-**P: ¿Se pueden personalizar los dashboards?**
-R: Sí, todos los dashboards son completamente personalizables. Siga las guías en `docs/implementacion_dashboard.md` para modificar visualizaciones y añadir nuevas métricas. 
+# Filtrar datos por origen
+datos_leads_filtrados = procesador.filtrar_datos(
+    datos_leads, 
+    filtros={'origen': ['Facebook', 'Google']}
+)
+
+# Unir datos de leads y matrículas
+datos_unidos = procesador.unir_leads_matriculas(datos_leads, datos_matriculas)
+
+# Generar características para modelado
+datos_procesados = procesador.crear_caracteristicas(datos_unidos)
+
+# Dividir para entrenamiento y prueba
+X_train, X_test, y_train, y_test = procesador.dividir_datos_entrenamiento(
+    datos_procesados,
+    columna_objetivo='convertido',
+    test_size=0.25
+)
+```
+
+### Gestor de Modelos
+
+El módulo `model_manager.py` se encarga de entrenar, evaluar y gestionar modelos predictivos.
+
+#### Modelos soportados:
+
+- **Lineales**: 
+  - `linear`: Regresión Lineal
+  - `ridge`: Regresión Ridge
+  - `lasso`: Regresión Lasso
+- **Ensemble**:
+  - `random_forest`: Random Forest
+  - `gradient_boosting`: Gradient Boosting
+
+#### Funcionalidades principales:
+
+- **Entrenamiento**: Entrenar modelos con diferentes algoritmos
+- **Evaluación**: Calcular métricas de rendimiento
+- **Guardado/Carga**: Persistir modelos entrenados
+- **Predicción**: Generar predicciones con modelos guardados
+- **Análisis**: Evaluar importancia de características
+
+#### Ejemplo de uso avanzado:
+
+```python
+from src.models.model_manager import ModelManager
+
+# Inicializar gestor de modelos
+model_manager = ModelManager(model_name="prediccion_conversion")
+
+# Entrenar modelo con parámetros personalizados
+metricas = model_manager.train(
+    datos=datos_procesados,
+    target_column="convertido",
+    features=["origen_Facebook", "origen_Google", "costo", "programa_MBA"],
+    categorical_features=["programa", "marca"],
+    model_type="random_forest",
+    model_params={"n_estimators": 200, "max_depth": 10},
+    test_size=0.25,
+    cv_folds=5
+)
+
+# Guardar modelo entrenado
+ruta_modelo = model_manager.save(filename="modelo_conversion_v1.pkl")
+
+# Cargar modelo existente
+model_manager.load("output/modelos/modelo_conversion_v1.pkl")
+
+# Realizar predicciones
+nuevos_datos = procesador.cargar_datos("datos/actual/nuevos_leads.csv")
+nuevos_datos_proc = procesador.crear_caracteristicas(nuevos_datos)
+predicciones = model_manager.predict(nuevos_datos_proc)
+
+# Analizar importancia de características
+importancias = model_manager.feature_importance()
+print(importancias.head(10))  # Top 10 características más importantes
+```
+
+### Evaluador de Modelos
+
+El módulo `evaluador_modelos.py` proporciona herramientas para evaluar el rendimiento de modelos predictivos.
+
+#### Funcionalidades principales:
+
+- **Evaluación de regresión**: Calcular MAE, MSE, RMSE, R²
+- **Evaluación de clasificación**: Calcular precision, recall, F1, matriz confusión
+- **Comparación de modelos**: Contrastar rendimiento de diferentes modelos
+- **Visualización**: Generar gráficos de rendimiento
+- **Almacenamiento**: Guardar métricas para análisis posterior
+
+#### Ejemplo de uso avanzado:
+
+```python
+from src.models.evaluador_modelos import EvaluadorModelos
+
+# Inicializar evaluador
+evaluador = EvaluadorModelos()
+
+# Evaluar modelo de regresión
+metricas_regresion = evaluador.evaluar_regresion(
+    y_true=y_test,
+    y_pred=predicciones,
+    nombre_modelo="random_forest_v1"
+)
+
+# Evaluar modelo de clasificación 
+metricas_clasificacion = evaluador.evaluar_clasificacion(
+    y_true=y_test_binario,
+    y_pred=predicciones_binarias,
+    y_prob=probabilidades,  # Probabilidades para curva ROC
+    nombre_modelo="rf_clasificacion"
+)
+
+# Comparar varios modelos
+comparacion = evaluador.comparar_modelos(
+    modelos=["linear_v1", "ridge_v1", "random_forest_v1"],
+    metricas_clave=["rmse", "r2", "mae"]
+)
+
+# Visualizar predicciones vs. valores reales
+evaluador.graficar_predicciones_vs_reales(
+    y_true=y_test,
+    y_pred=predicciones,
+    nombre_modelo="random_forest_v1"
+)
+
+# Visualizar residuos
+evaluador.graficar_residuos(
+    y_true=y_test,
+    y_pred=predicciones,
+    nombre_modelo="random_forest_v1"
+)
+
+# Guardar métricas para análisis posterior
+ruta_metricas = evaluador.guardar_metricas()
+```
+
+### Visualizador
+
+El módulo `visualizador.py` genera gráficos y visualizaciones para analizar datos y resultados.
+
+#### Tipos de visualizaciones:
+
+- **Series temporales**: Evolución de métricas en el tiempo
+- **Distribuciones**: Histogramas y densidades de variables
+- **Gráficos de barras**: Comparaciones por categorías
+- **Gráficos de dispersión**: Relaciones entre variables
+- **Matrices de correlación**: Interrelaciones entre variables
+- **Gráficos multilinea**: Comparación de series temporales
+
+#### Ejemplo de uso avanzado:
+
+```python
+from src.visualizacion.visualizador import Visualizador
+
+# Inicializar visualizador
+visualizador = Visualizador()
+
+# Gráfico de serie temporal (leads por semana)
+datos_temporales = datos_unidos.groupby(pd.Grouper(key='fecha_creacion', freq='W')).size().reset_index()
+datos_temporales.columns = ['fecha_creacion', 'conteo']
+
+visualizador.graficar_serie_temporal(
+    datos=datos_temporales,
+    columna_fecha='fecha_creacion',
+    columna_valor='conteo',
+    titulo='Evolución semanal de leads',
+    nombre_archivo='evolucion_leads_semanal.png'
+)
+
+# Distribución de costos por lead
+visualizador.graficar_distribucion(
+    datos=datos_leads,
+    columna='costo',
+    titulo='Distribución de costo por lead',
+    kde=True
+)
+
+# Leads por origen (barras)
+visualizador.graficar_barras(
+    datos=datos_leads,
+    columna_categoria='origen',
+    columna_valor=None,  # Cuenta frecuencias
+    titulo='Leads por canal de origen',
+    orientacion='horizontal',
+    limite_categorias=10
+)
+
+# Relación entre costo y conversión
+visualizador.graficar_dispersion(
+    datos=datos_procesados,
+    columna_x='costo',
+    columna_y='tasa_conversion',
+    columna_color='origen',
+    titulo='Relación entre costo y conversión por origen',
+    mostrar_regresion=True
+)
+
+# Matriz de correlación
+columnas_numericas = ['costo', 'dias_hasta_contacto', 'tasa_conversion', 'valor_matricula']
+visualizador.graficar_matriz_correlacion(
+    datos=datos_procesados,
+    columnas=columnas_numericas,
+    titulo='Correlaciones entre variables principales'
+)
+
+# Comparación multilinea
+visualizador.graficar_multilinea(
+    datos=datos_tendencia,
+    columna_x='fecha',
+    columnas_y=['leads', 'matriculas', 'proyeccion'],
+    titulo='Comparación de tendencias',
+    etiqueta_y='Cantidad'
+)
+```
+
+## Línea de Comandos
+
+El sistema puede ejecutarse desde la línea de comandos con diferentes opciones y parámetros.
+
+### Comando principal
+
+```bash
+python src/main.py [opciones]
+```
+
+### Opciones disponibles
+
+| Opción | Descripción | Ejemplo |
+|--------|-------------|---------|
+| `--datos-leads` | Ruta al archivo CSV de leads | `--datos-leads datos/actual/leads.csv` |
+| `--datos-matriculas` | Ruta al archivo CSV de matrículas | `--datos-matriculas datos/actual/matriculas.csv` |
+| `--config` | Ruta al archivo de configuración | `--config mi_config.yaml` |
+| `--guardar-resultados` | Guarda resultados en disco | `--guardar-resultados` |
+| `--dir-salida` | Directorio para guardar resultados | `--dir-salida resultados_personalizados/` |
+| `--tipo-modelo` | Tipo de modelo a entrenar | `--tipo-modelo random_forest` |
+| `--target` | Columna objetivo para el modelo | `--target convertido` |
+| `--solo-carga` | Solo cargar datos sin entrenar modelo | `--solo-carga` |
+| `--solo-evaluar` | Evaluar modelo sin entrenarlo | `--solo-evaluar` |
+| `--ruta-modelo` | Ruta a un modelo guardado | `--ruta-modelo output/modelos/modelo.pkl` |
+
+### Ejemplos de comandos comunes
+
+```bash
+# Cargar datos, entrenar modelo y guardar resultados
+python src/main.py --datos-leads datos/actual/leads.csv --datos-matriculas datos/actual/matriculas.csv --tipo-modelo gradient_boosting --guardar-resultados
+
+# Solo cargar y procesar datos
+python src/main.py --datos-leads datos/actual/leads.csv --datos-matriculas datos/actual/matriculas.csv --solo-carga
+
+# Evaluar un modelo guardado previamente
+python src/main.py --ruta-modelo output/modelos/modelo_principal_random_forest_20230615_120000.pkl --solo-evaluar --datos-leads datos/actual/leads.csv --datos-matriculas datos/actual/matriculas.csv
+```
+
+## Visualizaciones y Reportes
+
+El sistema genera diferentes tipos de visualizaciones y reportes:
+
+### Tipos de visualizaciones
+
+1. **Visualizaciones de datos**:
+   - Distribución de leads por origen
+   - Evolución temporal de leads
+   - Comparaciones por programa/marca
+   - Matrices de correlación entre variables
+
+2. **Visualizaciones de modelos**:
+   - Predicciones vs. valores reales
+   - Análisis de residuos
+   - Importancia de características
+   - Comparación de rendimiento entre modelos
+
+### Ubicación de los resultados
+
+Todos los resultados generados se guardan en la carpeta `output/` con la siguiente estructura:
+
+- `output/graficos/`: Visualizaciones de datos y análisis exploratorio
+- `output/reportes/`: Reportes de evaluación de modelos y resultados
+- `output/modelos/`: Modelos entrenados guardados en formato PKL
+
+### Interpretación de visualizaciones
+
+- **Gráficos de series temporales**: Muestran tendencias y patrones estacionales en leads o conversiones.
+- **Gráficos de barras**: Comparan rendimiento entre diferentes categorías (origen, programa, etc.).
+- **Gráficos de dispersión**: Revelan relaciones entre variables (ej. costo vs. conversión).
+- **Predicciones vs. reales**: La cercanía a la línea diagonal indica precisión del modelo.
+- **Análisis de residuos**: Distribución simétrica alrededor de cero indica buen ajuste del modelo.
+- **Importancia de características**: Identifica qué variables tienen mayor influencia en las predicciones.
+
+## Análisis de Resultados
+
+### Métricas de evaluación
+
+#### Para modelos de regresión:
+
+- **MAE (Error Absoluto Medio)**: Error promedio en términos absolutos
+- **RMSE (Raíz del Error Cuadrático Medio)**: Error promedio ponderando más los errores grandes
+- **R² (Coeficiente de determinación)**: Proporción de varianza explicada por el modelo (0-1)
+- **Error Porcentual Medio**: Error promedio expresado como porcentaje
+
+#### Para modelos de clasificación:
+
+- **Accuracy**: Proporción de predicciones correctas
+- **Precision**: Proporción de positivos predichos que son realmente positivos
+- **Recall**: Proporción de positivos reales que fueron identificados correctamente
+- **F1-Score**: Media armónica de precision y recall
+- **AUC**: Área bajo la curva ROC (0.5-1.0)
+
+### Cómo interpretar las métricas
+
+| Métrica | Bueno | Moderado | Deficiente |
+|---------|-------|----------|------------|
+| R² | >0.7 | 0.4-0.7 | <0.4 |
+| RMSE | Depende del rango de datos, menor es mejor |
+| MAE | Depende del rango de datos, menor es mejor |
+| Accuracy | >0.8 | 0.6-0.8 | <0.6 |
+| F1-Score | >0.8 | 0.6-0.8 | <0.6 |
+| AUC | >0.8 | 0.7-0.8 | <0.7 |
+
+### Comparación de modelos
+
+Para comparar el rendimiento de diferentes modelos, examine:
+
+1. **Métricas clave**: Compare R², RMSE, MAE para modelos de regresión; Accuracy, F1, AUC para clasificación
+2. **Visualizaciones**: Compare gráficos de predicciones vs. reales y distribución de residuos
+3. **Complejidad**: Modelos más simples son preferibles si tienen rendimiento similar a los complejos
+4. **Tiempo de entrenamiento/predicción**: Modelos más rápidos son ventajosos para actualizaciones frecuentes
+5. **Interpretabilidad**: Modelos lineales son más fáciles de interpretar que Random Forest o Gradient Boosting
+
+## Preguntas Frecuentes
+
+### Datos y Preparación
+
+**P: ¿Qué formato deben tener mis archivos de datos?**  
+R: Los archivos deben estar en formato CSV, preferiblemente con delimitador coma (,) y con las columnas requeridas mencionadas en la sección de Procesador de Datos.
+
+**P: ¿Cómo manejo valores faltantes en mis datos?**  
+R: El sistema detecta valores faltantes durante la validación. Para columnas críticas, considere imputar valores o filtrar filas antes de procesar los datos.
+
+**P: ¿Puedo usar otras fuentes de datos además de CSV?**  
+R: Actualmente el sistema soporta CSV y Excel. Para otros formatos, conviértalos primero a uno de estos formatos.
+
+### Modelos y Entrenamiento
+
+**P: ¿Qué modelo debo usar para mi caso?**  
+R: Depende de sus datos y objetivo:
+- Para predicciones numéricas precisas: Gradient Boosting o Random Forest
+- Para modelos interpretables: Linear, Ridge o Lasso
+- Para datasets pequeños: Ridge o Lasso para evitar sobreajuste
+
+**P: ¿Cómo evito el sobreajuste?**  
+R: Utilice validación cruzada (ya implementada), reduzca la complejidad del modelo o aumente el tamaño del conjunto de datos.
+
+**P: ¿Con qué frecuencia debo reentrenar mis modelos?**  
+R: Depende de cómo cambian sus datos. Para campañas educativas, se recomienda reentrenar mensualmente o cuando haya cambios significativos en estrategias de marketing.
+
+### Resultados e Interpretación
+
+**P: ¿Cómo interpreto la importancia de características?**  
+R: Las características con mayor valor tienen más impacto en las predicciones. Use esta información para identificar qué variables influyen más en las conversiones.
+
+**P: ¿Qué hago si mi modelo tiene un rendimiento pobre?**  
+R: Considere:
+1. Añadir más datos de entrenamiento
+2. Crear características adicionales
+3. Probar diferentes tipos de modelos
+4. Ajustar hiperparámetros
+5. Verificar la calidad de los datos
+
+**P: ¿Cómo utilizo las predicciones para optimizar campañas?**  
+R: Identifique segmentos con alta probabilidad de conversión y enfoque recursos en ellos. Use la importancia de características para ajustar estrategias de marketing.
+
+## Solución de Problemas
+
+### Errores comunes y soluciones
+
+#### Error: "No se encuentra el módulo X"
+
+**Causa**: Estructura de directorios incorrecta o error en el Python PATH.  
+**Solución**: 
+- Verifique que está ejecutando desde la raíz del proyecto
+- Confirme que todas las dependencias están instaladas
+- Ejecute `python -m src.main` en lugar de `python src/main.py`
+
+#### Error: "No se pueden cargar los datos"
+
+**Causa**: Archivo no encontrado o formato incorrecto.  
+**Solución**:
+- Verifique las rutas a los archivos
+- Confirme que los archivos existen y tienen permisos de lectura
+- Verifique el formato del CSV (delimitadores, encabezados)
+
+#### Error: "Error al entrenar el modelo"
+
+**Causa**: Problemas con los datos o configuración del modelo.  
+**Solución**:
+- Verifique la calidad de los datos (valores nulos, outliers)
+- Revise los parámetros del modelo
+- Consulte los logs detallados en la carpeta `logs/`
+
+#### Advertencia: "Características con varianza cero"
+
+**Causa**: Algunas columnas tienen el mismo valor para todas las filas.  
+**Solución**: 
+- Elimine estas columnas de los datos de entrada
+- Verifique la calidad y diversidad de sus datos
+
+### Registro de errores
+
+Para diagnósticos detallados, revise los archivos de log generados en la carpeta `logs/`. Estos archivos contienen información detallada sobre la ejecución del sistema, incluidos errores, advertencias y detalles del procesamiento.
+
+### Contacto y soporte
+
+Para soporte adicional:
+- Consulte la documentación detallada en `docs/`
+- Revise el repositorio del proyecto para actualizaciones y soluciones conocidas
+- Contacte al equipo de desarrollo para problemas no resueltos 

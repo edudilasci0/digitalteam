@@ -1,0 +1,67 @@
+# Configuración del Sistema Predictor y Optimizador de Matrículas
+
+# Rutas de directorios
+paths:
+  data:
+    actual: "datos/actual"
+    historico: "datos/historico"
+  output:
+    reportes: "output/reportes"
+    modelos: "output/modelos"
+    graficos: "output/graficos"
+  logs: "logs"
+
+# Configuración de análisis
+analysis:
+  frecuencia: "W"  # W: semanal, M: mensual, Q: trimestral
+  periodos_minimos: 12  # Mínimo de periodos para análisis de estacionalidad
+  confianza: 0.95  # Nivel de confianza para intervalos
+
+# Configuración de modelos
+models:
+  tipos_disponibles:
+    - "linear"
+    - "ridge"
+    - "lasso"
+    - "random_forest"
+    - "gradient_boosting"
+  default: "random_forest"
+  parametros:
+    random_forest:
+      n_estimators: 200
+      max_depth: 10
+    gradient_boosting:
+      n_estimators: 150
+      learning_rate: 0.1
+      max_depth: 5
+
+# Configuración de simulaciones
+simulation:
+  monte_carlo:
+    n_simulaciones: 1000
+    semilla: 42
+
+# Configuración de visualización
+visualization:
+  estilo: "seaborn"
+  tamano_figura: [12, 8]
+  formato_imagen: "png"
+  dpi: 300
+
+# Configuración de Google Sheets
+google_sheets:
+  credenciales: "config/credentials.json"
+  token: "config/token.json"
+  hojas:
+    leads: "ID_DE_HOJA_LEADS"
+    matriculas: "ID_DE_HOJA_MATRICULAS"
+    planificacion: "ID_DE_HOJA_PLANIFICACION"
+  sincronizacion_automatica: true
+  intervalo_sincronizacion: 3600  # segundos
+
+# Configuración de Power BI
+power_bi:
+  exportar_formato: "xlsx"
+  incluir_graficos: true
+  incluir_metricas: true
+  incluir_predicciones: true 
