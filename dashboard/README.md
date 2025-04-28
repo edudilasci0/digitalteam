@@ -1,4 +1,4 @@
-# Dashboard Comercial y Analítico para Gestión de Leads y Matrículas
+# Dashboard de rendimiento 
 
 ## Descripción
 Este proyecto proporciona una solución completa para implementar dashboards de seguimiento comercial y análisis de matrículas educativas, diseñado específicamente para equipos de marketing y ventas en instituciones educativas.
