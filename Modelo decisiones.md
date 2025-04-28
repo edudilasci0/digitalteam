@@ -18,9 +18,9 @@ El sistema ofrece los siguientes módulos para la toma de decisiones:
 
 1. **Dashboard Comercial**: Visualización del progreso actual vs. estimaciones
 2. **Análisis de Estacionalidad**: Patrones históricos y predicciones futuras
-3. **Simulación Monte Carlo (NUEVO)**: Intervalos de confianza para predicciones
-4. **Análisis de Elasticidad (NUEVO)**: Sensibilidad de conversión a diferentes factores
-5. **Dashboards Power BI (NUEVO)**: Visualizaciones interactivas para diferentes roles
+3. **Simulación Monte Carlo **: Intervalos de confianza para predicciones
+4. **Análisis de Elasticidad **: Sensibilidad de conversión a diferentes factores
+5. **Dashboards Power BI **: Visualizaciones interactivas para diferentes roles
 
 ## Proceso de toma de decisiones quincenal
 
