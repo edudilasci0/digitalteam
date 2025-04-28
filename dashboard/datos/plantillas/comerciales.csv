@@ -1,0 +1,7 @@
+id_comercial,nombre,apellido,email,telefono,departamento,fecha_inicio,supervisor_id
+1,Juan,Martínez,juan.martinez@ejemplo.com,555-111-2222,Grado,2022-01-15,4
+2,María,López,maria.lopez@ejemplo.com,555-222-3333,Posgrado,2021-06-10,5
+3,Carlos,Rodríguez,carlos.rodriguez@ejemplo.com,555-333-4444,Grado,2022-03-22,4
+4,Ana,Fernández,ana.fernandez@ejemplo.com,555-444-5555,Coordinación Grado,2020-11-05,6
+5,José,García,jose.garcia@ejemplo.com,555-555-6666,Coordinación Posgrado,2019-08-17,6
+6,Laura,Sánchez,laura.sanchez@ejemplo.com,555-666-7777,Dirección Comercial,2018-05-20,0 

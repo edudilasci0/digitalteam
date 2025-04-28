@@ -1,0 +1,11 @@
+id_programa,nombre,nivel,facultad,categoria,duracion,precio_referencia
+101,Administración de Empresas,Grado,Ciencias Empresariales,Negocios,4,6000
+102,Ingeniería Informática,Grado,Ingeniería,Tecnología,5,7500
+103,Marketing Digital,Posgrado,Ciencias Empresariales,Negocios,1,4000
+104,Ciencia de Datos,Posgrado,Ingeniería,Tecnología,1,5000
+105,Derecho,Grado,Ciencias Jurídicas,Legal,5,7000
+106,Psicología,Grado,Ciencias Sociales,Salud,4,6500
+107,Medicina,Grado,Ciencias de la Salud,Salud,6,12000
+108,Arquitectura,Grado,Artes y Diseño,Diseño,5,8000
+109,MBA,Posgrado,Ciencias Empresariales,Negocios,1.5,8000
+110,Enfermería,Grado,Ciencias de la Salud,Salud,4,5500 

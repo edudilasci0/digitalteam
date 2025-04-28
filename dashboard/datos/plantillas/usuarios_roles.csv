@@ -1,0 +1,8 @@
+id_usuario,email,nombre,apellido,rol,id_comercial,ver_dashboard_completo,programas_permitidos
+1,juan.martinez@ejemplo.com,Juan,Martínez,Comercial,1,0,101;103;104
+2,maria.lopez@ejemplo.com,María,López,Comercial,2,0,102;104
+3,carlos.rodriguez@ejemplo.com,Carlos,Rodríguez,Comercial,3,0,101;102;103
+4,ana.fernandez@ejemplo.com,Ana,Fernández,Coordinador,4,1,101;102;105;106;107;108;110
+5,jose.garcia@ejemplo.com,José,García,Coordinador,5,1,103;104;109
+6,laura.sanchez@ejemplo.com,Laura,Sánchez,Dirección,6,1,Todos
+7,soporte.bi@ejemplo.com,Soporte,BI,Admin,0,1,Todos 

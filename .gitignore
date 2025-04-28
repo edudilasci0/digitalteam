@@ -1,33 +1,42 @@
+# Datos procesados (cada usuario genera los propios)
+dashboard/datos/procesados/*
+dashboard/logs/*
+
 # Archivos generados
+salidas/
+datos/procesados/
+*.pbix
+
+# Entornos virtuales
+venv/
+env/
+.env
+
+# Archivos temporales del sistema
+.DS_Store
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# No excluir los archivos de plantilla
+!dashboard/datos/plantillas/*.csv
 
 # Directorios
 outputs/
 models/
-
-# Entorno virtual
-venv/
-env/
-ENV/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -39,7 +48,6 @@ ENV/
 *.swo
 
 # OS generados
-.DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100

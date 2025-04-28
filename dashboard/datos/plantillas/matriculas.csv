@@ -1,0 +1,6 @@
+id_matricula,id_lead,fecha_matricula,programa_id,valor_matricula,forma_pago,comercial_id
+1,3,2023-01-10,101,1500,Tarjeta,1
+2,7,2023-01-15,103,2000,Transferencia,3
+3,11,2023-01-20,103,2000,Tarjeta,1
+4,14,2023-01-25,102,1800,Efectivo,1
+5,18,2023-01-30,102,1800,Transferencia,2 
