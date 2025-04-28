@@ -1,4 +1,6 @@
-# Guía de Toma de Decisiones para Equipos de Marketing y Media Planners
+# Modelo de Decisiones - Motor de Decisión
+
+Este documento proporciona una guía para interpretar los resultados del Motor de Decisión y tomar decisiones informadas basadas en los datos y predicciones generadas por el sistema.
 
 ## Introducción
 

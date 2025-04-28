@@ -1,4 +1,4 @@
-# Manual de Usuario - Sistema Predictor de Matrículas
+# Manual de Usuario - Motor de Decisión
 
 ## Índice
 
@@ -19,7 +19,7 @@
 
 ## Introducción
 
-El Sistema Predictor de Matrículas es una herramienta para equipos de marketing educativo diseñada para:
+El Motor de Decisión es una herramienta para equipos de marketing educativo diseñada para:
 
 - Analizar datos históricos y actuales de leads y matrículas
 - Construir modelos predictivos para estimar conversiones futuras

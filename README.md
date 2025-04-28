@@ -1,8 +1,8 @@
-# Sistema Predictor y Optimizador de Matrículas
+# Motor de Decisión
 
 ## Introducción
 
-Sistema integral para la predicción y optimización de campañas de captación de matrículas educativas. Esta herramienta permite analizar datos históricos, predecir resultados futuros, y optimizar la inversión para maximizar el retorno. Está diseñado específicamente para equipos de marketing educativo y media planners.
+Sistema integral para la toma de decisiones basada en datos para campañas de captación de matrículas educativas. Esta herramienta permite analizar datos históricos, predecir resultados futuros, y optimizar la inversión para maximizar el retorno. Está diseñado específicamente para equipos de marketing educativo y media planners.
 
 ## Características Principales
 

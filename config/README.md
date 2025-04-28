@@ -1,6 +1,6 @@
-# Configuración del Sistema
+# Configuración del Motor de Decisión
 
-Este directorio contiene los archivos de configuración del Sistema Predictor y Optimizador de Matrículas.
+Este directorio contiene los archivos de configuración del Motor de Decisión.
 
 ## Archivos de configuración
 
