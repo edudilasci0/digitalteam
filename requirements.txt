@@ -7,6 +7,10 @@ seaborn==0.13.2
 streamlit==1.44.1
 python-pptx==1.0.2
 
+# Gestión de secretos y configuración
+python-dotenv==1.0.1
+pyyaml==6.0.1
+
 # Utilidades
 python-dateutil==2.9.0.post0
 pytz==2025.2
@@ -15,16 +19,25 @@ tzdata==2025.2
 # Archivo y procesamiento
 xlrd==2.0.1
 openpyxl==3.1.2
-PyYAML==6.0.1
 lxml==5.4.0
 
 # Visualización
 plotly==5.22.1
 
+# Pruebas
+pytest==8.2.1
+pytest-cov==5.0.0
+
+# Dependencias opcionales (comentar si no se necesitan)
+# Google integration
 gspread>=5.0.0
 google-auth>=2.0.0
 google-api-python-client>=2.0.0
+
+# Jupyter notebooks
 jupyter>=1.0.0
+
+# Extras
 pillow>=8.0.0
 xlsxwriter>=3.0.0
 tqdm>=4.60.0

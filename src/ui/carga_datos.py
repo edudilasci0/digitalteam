@@ -12,12 +12,117 @@ from pathlib import Path
 import datetime
 import time
 from io import StringIO
+import hashlib
 
 from src.data.procesador_datos import ProcesadorDatos
 from src.utils.config import get_config, update_config
 from src.utils.logging import get_module_logger
 
 logger = get_module_logger(__name__)
+
+# Configuración de la página y estilos en español
+st.set_page_config(
+    page_title="Motor de Decisión - Team Digital",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Ocultar el menú de Streamlit y el footer con CSS
+hide_menu_style = """
+    <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        .stDeployButton {visibility: hidden;}
+        
+        /* Personalizar estilos */
+        .stRadio [role="radiogroup"] {
+            flex-direction: row !important;
+        }
+        
+        /* Traducir textos de elementos de Streamlit */
+        button[title="View fullscreen"] {
+            visibility: hidden;
+        }
+        
+        .uploadedFile {
+            color: #FF6F00 !important;
+        }
+        
+        /* Mensajes de error/info en español */
+        div[data-baseweb="notification"] {
+            background-color: #FF6F00 !important;
+        }
+    </style>
+"""
+st.markdown(hide_menu_style, unsafe_allow_html=True)
+
+def check_password():
+    """
+    Verifica la contraseña del usuario.
+    Retorna True si la contraseña es correcta, False en caso contrario.
+    """
+    # Si ya está autenticado, retornar True
+    if 'authenticated' in st.session_state and st.session_state.authenticated:
+        return True
+    
+    # Inicializar estado de sesión
+    if 'password' not in st.session_state:
+        st.session_state.password = ''
+    if 'auth_failed' not in st.session_state:
+        st.session_state.auth_failed = False
+    
+    # Crear formulario de inicio de sesión estilizado
+    auth_container = st.empty()
+    with auth_container.container():
+        st.markdown(
+            """
+            <div style="display: flex; justify-content: center;">
+                <h2>Motor de Decisión</h2>
+            </div>
+            <div style="display: flex; justify-content: center;">
+                <h4>team digital <span style="color: #FF6F00;">❤️</span></h4>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+        
+        password = st.text_input(
+            "Ingrese la contraseña", 
+            type="password", 
+            key="password_input",
+            placeholder="Contraseña"
+        )
+        
+        col1, col2, col3 = st.columns([1,1,1])
+        with col2:
+            login_button = st.button("Iniciar Sesión", use_container_width=True)
+        
+        if st.session_state.auth_failed:
+            st.error("Contraseña incorrecta. Intente nuevamente.")
+        
+        st.markdown(
+            """
+            <div style="text-align: center; margin-top: 30px; font-size: 0.8em; color: #888;">
+                Sistema exclusivo para uso interno de Digital Team.<br>
+                © 2025 Digital Team
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    
+    # Validar contraseña
+    if login_button:
+        # La contraseña correcta es "teamdigital"
+        if password == "teamdigital":
+            st.session_state.authenticated = True
+            auth_container.empty()
+            return True
+        else:
+            st.session_state.auth_failed = True
+            return False
+            
+    return False
 
 class InterfazCargaDatos:
     """
@@ -289,6 +394,39 @@ class InterfazCargaDatos:
         """
         Muestra la interfaz de carga de datos en Streamlit.
         """
+        # Barra lateral con logo team digital
+        st.sidebar.markdown(
+            """
+            <div style="text-align: center; margin-top: 20px;">
+                <h3>team digital <span style="color: #FF6F00;">❤️</span></h3>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+        
+        # Agregar opciones de menú en la barra lateral
+        st.sidebar.title("Menú Principal")
+        opcion_menu = st.sidebar.radio(
+            "",
+            ["Carga de Datos", "Análisis", "Reportes", "Configuración"],
+            index=0,
+        )
+        
+        # Mostrar el usuario autenticado
+        st.sidebar.markdown(
+            """
+            <div style="position: fixed; bottom: 30px; left: 30px; font-size: 0.8em;">
+                🔒 Usuario autenticado
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        # Botón para cerrar sesión
+        if st.sidebar.button("Cerrar Sesión"):
+            st.session_state.authenticated = False
+            st.experimental_rerun()
+        
         st.title("Carga de Datos - Motor de Decisión")
         
         # Panel principal
@@ -489,8 +627,9 @@ class InterfazCargaDatos:
 
 def main():
     """Función principal para ejecutar la interfaz de carga de datos."""
-    interfaz = InterfazCargaDatos()
-    interfaz.mostrar_interfaz_carga()
+    if check_password():
+        interfaz = InterfazCargaDatos()
+        interfaz.mostrar_interfaz_carga()
 
 if __name__ == "__main__":
     main() 

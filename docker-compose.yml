@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  motor-decision:
+    build: .
+    container_name: motor-decision
+    volumes:
+      - ./datos:/app/datos
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./config:/app/config
+    ports:
+      - "8501:8501"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped 
