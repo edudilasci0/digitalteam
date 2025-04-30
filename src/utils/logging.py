@@ -85,8 +85,8 @@ def setup_logging(
     # Añadir handler de consola si se solicita
     if console:
         console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
     
     # Configurar handler de archivo si se solicita
     if log_file is None and config.get('paths', {}).get('logs'):
@@ -125,7 +125,7 @@ def get_module_logger(module_name: str) -> logging.Logger:
     
     Args:
         module_name: Nombre del módulo (normalmente __name__)
-        
+    
     Returns:
         Un logger configurado para el módulo
     """
@@ -191,7 +191,7 @@ def registrar_inicio_app():
     import platform
     
     logger = get_module_logger("sistema")
-    
+
     # Registrar información del sistema
     info_sistema = {
         "python_version": platform.python_version(),
