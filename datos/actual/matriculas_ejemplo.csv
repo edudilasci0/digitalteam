@@ -1,0 +1,5 @@
+id_matricula,id_lead,fecha_matricula,programa,marca,valor_matricula
+5001,1008,2023-01-10,MBA,Marca A,2500.00
+5002,1009,2023-01-12,Data Science,Marca B,3200.00
+5003,1015,2023-01-15,Data Science,Marca B,3200.00
+5004,1019,2023-01-18,Data Science,Marca B,3200.00 

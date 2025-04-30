@@ -1,0 +1,14 @@
+README.md
+setup.py
+digitalteam.egg-info/PKG-INFO
+digitalteam.egg-info/SOURCES.txt
+digitalteam.egg-info/dependency_links.txt
+digitalteam.egg-info/top_level.txt
+src/__init__.py
+src/main.py
+src/data/__init__.py
+src/data/db_manager.py
+src/data/procesador_datos.py
+src/ui/__init__.py
+src/ui/carga_datos.py
+src/ui/generador_reportes.py
