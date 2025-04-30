@@ -1,4 +1,56 @@
-# Estado Actual del Proyecto: Motor de Decisión de Marketing Educativo
+# ESTADO DEL PROYECTO
+
+## Arquitectura Actual
+
+El Motor de Decisión Educativo y Predictivo ha evolucionado a una arquitectura centrada en Streamlit, que permite gestionar marcas educativas independientes, cargar datos, generar reportes y exportar análisis en diferentes formatos.
+
+## Archivos Principales
+
+Los siguientes archivos son fundamentales para el funcionamiento actual del sistema:
+
+- **app_motor.py**: Aplicación principal y única necesaria para el funcionamiento completo del motor
+- **requirements.txt**: Dependencias del proyecto
+- **README.md**: Documentación básica del proyecto
+- **Manual de Usuario.md**: Guía detallada para usuarios del sistema
+
+## Archivos que pueden eliminarse
+
+Los siguientes archivos pertenecen a versiones anteriores del sistema y pueden eliminarse:
+
+- **app_simple.py**: Versión simplificada inicial para pruebas
+- **app_datos.py**: Versión previa centrada solo en carga de datos
+- **app_reportes_avanzados.py**: Versión parcial enfocada solo en reportes
+- **app_completa.py**: Versión anterior que ha sido reemplazada por app_motor.py
+- **menu_motor_decision.sh**: Script bash que ya no se utiliza con la nueva interfaz web
+
+## Directorios a mantener
+
+Los siguientes directorios deben mantenerse:
+
+- **src/**: Módulos y utilidades del sistema
+- **data/**: Directorio donde se almacenan los datos de marcas (creado automáticamente)
+- **docs/**: Documentación adicional
+- **tests/**: Pruebas unitarias y de integración
+
+## Próximos Pasos
+
+1. **Limpieza de repositorio**: Eliminar archivos innecesarios
+2. **Mejora de modelos ML**: Implementar más algoritmos predictivos
+3. **Internacionalización**: Soporte para múltiples idiomas
+4. **Exportación avanzada**: Mejorar formatos de reportes exportados
+5. **API REST**: Desarrollar endpoints para integración con otros sistemas
+
+## Modificaciones recientes
+
+La versión actual (app_motor.py) ha incorporado:
+
+- Gestión completa por marcas educativas
+- Tres tipos de reportes especializados
+- Modelos de Machine Learning con intervalos de confianza
+- Exportación en múltiples formatos
+- Detección de anomalías
+- Análisis temporal
+- Mejoras de usabilidad con ayuda contextual
 
 ## Resumen Ejecutivo
 

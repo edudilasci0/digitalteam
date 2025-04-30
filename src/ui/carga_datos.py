@@ -934,22 +934,22 @@ class InterfazCargaDatos:
             ["Reporte General Estratégico (Marketing)", "Reporte de Status Comercial", 
              "Análisis multivariable", "Segmentación avanzada", "Predicción por cohortes", 
              "Análisis de atribución", "Modelado predictivo", "Reporte personalizado avanzado"]
-        )
-        
+            )
+            
         # Parámetros comunes
         st.subheader("Configuración avanzada")
-        col1, col2 = st.columns(2)
-        
-        with col1:
+            col1, col2 = st.columns(2)
+            
+            with col1:
             fecha_inicio = st.date_input("Fecha de inicio", key="adv_fecha_inicio")
             st.selectbox("Nivel de agregación", ["Diario", "Semanal", "Mensual", "Trimestral", "Personalizado"])
             formato_reporte = st.selectbox("Formato de salida", ["Dashboard interactivo", "PDF avanzado", "Excel con macros", "Power BI", "API JSON"])
-        
-        with col2:
+            
+            with col2:
             fecha_fin = st.date_input("Fecha de fin", key="adv_fecha_fin")
             st.selectbox("Motor de análisis", ["Estándar", "Avanzado (ML)", "Estadístico", "Big Data"])
             st.checkbox("Incluir métricas avanzadas", value=True)
-        
+            
         # Parámetros específicos según tipo de reporte
         if tipo_reporte == "Reporte General Estratégico (Marketing)":
             st.subheader("Configuración de Reporte General Estratégico")
@@ -983,7 +983,7 @@ class InterfazCargaDatos:
                     "Formato de exportación",
                     ["Excel compatible Power BI", "CSV compatible Power BI", "Excel estándar", "PDF"]
                 )
-                
+        
                 st.checkbox("Incluir recomendaciones automatizadas", value=True)
             
             # Sección de proyecciones
@@ -1165,7 +1165,7 @@ class InterfazCargaDatos:
         ic_inferior_leads = proyeccion_leads - np.linspace(10, 25, 30)
         ic_superior_matriculas = proyeccion_matriculas + np.linspace(3, 8, 30)
         ic_inferior_matriculas = proyeccion_matriculas - np.linspace(3, 8, 30)
-        
+            
         # Preparar datos para gráfico
         df_historico = pd.DataFrame({
             'Fecha': fechas,
@@ -1187,7 +1187,7 @@ class InterfazCargaDatos:
         st.subheader("Tendencia y proyección de Leads")
         fig_leads = self._crear_grafico_proyeccion(df_historico, df_proyeccion, 'Leads')
         st.pyplot(fig_leads)
-        
+                
         st.subheader("Tendencia y proyección de Matrículas")
         fig_matriculas = self._crear_grafico_proyeccion(df_historico, df_proyeccion, 'Matrículas')
         st.pyplot(fig_matriculas)
@@ -1195,12 +1195,12 @@ class InterfazCargaDatos:
         # Métricas clave
         st.subheader("Métricas clave")
         col1, col2, col3 = st.columns(3)
-        
-        with col1:
+            
+            with col1:
             st.metric("CPA Actual", "$45.32", "-12% vs mes anterior")
             st.metric("Elasticidad", "1.32", "+0.08 vs mes anterior")
-        
-        with col2:
+            
+            with col2:
             st.metric("Proyección matrículas", "210", "+15% vs meta")
             st.metric("Margen de error", "±22", "95% confianza")
         
@@ -1254,17 +1254,17 @@ class InterfazCargaDatos:
         
         # Estado quincenal
         st.markdown("<h4>Estado quincenal</h4>", unsafe_allow_html=True)
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
             st.metric("Leads última quincena", "250", "+15% vs quincena anterior")
             st.metric("Matrículas última quincena", "32", "+8% vs quincena anterior")
-        
-        with col2:
+            
+            with col2:
             st.metric("Conversión última quincena", "12.8%", "+0.5% vs quincena anterior")
             st.metric("CPA última quincena", "$42.50", "-$3.75 vs quincena anterior")
-        
+            
         # Observaciones
         st.markdown("<h4>Observaciones clave</h4>", unsafe_allow_html=True)
         st.info("La campaña de remarketing está teniendo mejores resultados que lo esperado")
@@ -1434,8 +1434,8 @@ class InterfazCargaDatos:
 def main():
     """Función principal para ejecutar la interfaz de carga de datos."""
     if check_password():
-        interfaz = InterfazCargaDatos()
-        interfaz.mostrar_interfaz_carga()
+    interfaz = InterfazCargaDatos()
+    interfaz.mostrar_interfaz_carga()
 
 if __name__ == "__main__":
     main() 
