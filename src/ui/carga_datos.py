@@ -144,7 +144,11 @@ class InterfazCargaDatos:
         # Estructura de datos esperada (para validación)
         self.estructura_esperada = {
             'leads': self.procesador.columnas_requeridas['leads'],
-            'matriculas': self.procesador.columnas_requeridas['matriculas']
+            'matriculas': self.procesador.columnas_requeridas['matriculas'],
+            'planificacion_campanas': [
+                'fecha_inicio_campana', 'fecha_fin_campana', 'canal', 
+                'presupuesto_estimado', 'presupuesto_ejecutado', 'objetivo_leads'
+            ]
         }
         
         # Historial de cargas
@@ -190,7 +194,7 @@ class InterfazCargaDatos:
             df (pd.DataFrame): DataFrame a analizar
             
         Returns:
-            str: Tipo de datos detectado ('leads', 'matriculas' o 'desconocido')
+            str: Tipo de datos detectado ('leads', 'matriculas', 'planificacion_campanas' o 'desconocido')
         """
         # Contar columnas que coinciden con cada tipo
         coincidencias = {}
@@ -299,6 +303,47 @@ class InterfazCargaDatos:
                         'descripcion': "La columna 'valor_matricula' contiene valores que no son numéricos",
                         'gravedad': 'alta'
                     })
+        
+        elif tipo_datos == 'planificacion_campanas':
+            # Verificar fechas
+            for campo_fecha in ['fecha_inicio_campana', 'fecha_fin_campana']:
+                if campo_fecha in df.columns:
+                    try:
+                        pd.to_datetime(df[campo_fecha], errors='raise')
+                    except:
+                        problemas.append({
+                            'tipo': 'tipo_datos_incorrecto',
+                            'descripcion': f"La columna '{campo_fecha}' contiene valores que no son fechas válidas",
+                            'gravedad': 'alta'
+                        })
+            
+            # Verificar numéricos
+            for campo_num in ['presupuesto_estimado', 'presupuesto_ejecutado', 'objetivo_leads']:
+                if campo_num in df.columns:
+                    if not pd.api.types.is_numeric_dtype(df[campo_num]) and not all(pd.to_numeric(df[campo_num], errors='coerce').notna()):
+                        problemas.append({
+                            'tipo': 'tipo_datos_incorrecto',
+                            'descripcion': f"La columna '{campo_num}' contiene valores que no son numéricos",
+                            'gravedad': 'alta'
+                        })
+            
+            # Verificar coherencia de fechas
+            if 'fecha_inicio_campana' in df.columns and 'fecha_fin_campana' in df.columns:
+                try:
+                    fechas_inicio = pd.to_datetime(df['fecha_inicio_campana'])
+                    fechas_fin = pd.to_datetime(df['fecha_fin_campana'])
+                    fechas_invalidas = fechas_inicio > fechas_fin
+                    
+                    if fechas_invalidas.any():
+                        filas_invalidas = fechas_invalidas.sum()
+                        problemas.append({
+                            'tipo': 'coherencia_fechas',
+                            'descripcion': f"Se detectaron {filas_invalidas} campañas donde la fecha de inicio es posterior a la fecha de fin",
+                            'gravedad': 'alta'
+                        })
+                except:
+                    # Error ya reportado en la validación de fechas
+                    pass
         
         # Determinar validez general
         es_valido = not any(p['gravedad'] == 'alta' for p in problemas)
@@ -453,10 +498,10 @@ class InterfazCargaDatos:
         # Selector de tipo de datos
         tipo_datos = st.radio(
             "Tipo de datos a cargar:",
-            ["Leads", "Matrículas", "Auto-detectar"],
+            ["Leads", "Matrículas", "Planificación de campañas", "Auto-detectar"],
             horizontal=True
         )
-        tipo_datos = tipo_datos.lower() if tipo_datos != "Auto-detectar" else None
+        tipo_datos = tipo_datos.lower().replace('ó', 'o').replace(' ', '_') if tipo_datos != "Auto-detectar" else None
         
         # Carga de archivos
         uploaded_file = st.file_uploader(
@@ -886,7 +931,8 @@ class InterfazCargaDatos:
         # Selector de tipo de reporte avanzado
         tipo_reporte = st.selectbox(
             "Tipo de reporte avanzado:",
-            ["Análisis multivariable", "Segmentación avanzada", "Predicción por cohortes", 
+            ["Reporte General Estratégico (Marketing)", "Reporte de Status Comercial", 
+             "Análisis multivariable", "Segmentación avanzada", "Predicción por cohortes", 
              "Análisis de atribución", "Modelado predictivo", "Reporte personalizado avanzado"]
         )
         
@@ -905,7 +951,112 @@ class InterfazCargaDatos:
             st.checkbox("Incluir métricas avanzadas", value=True)
         
         # Parámetros específicos según tipo de reporte
-        if tipo_reporte == "Análisis multivariable":
+        if tipo_reporte == "Reporte General Estratégico (Marketing)":
+            st.subheader("Configuración de Reporte General Estratégico")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.multiselect(
+                    "Métricas a incluir",
+                    ["Leads", "Matrículas", "CPA", "Elasticidad", "Proyección de cierre",
+                     "Conversión por canal", "ROI por campaña", "Efectividad de mensajes"],
+                    default=["Leads", "Matrículas", "CPA", "Elasticidad", "Proyección de cierre"]
+                )
+                
+                st.selectbox(
+                    "Nivel de detalle por canal",
+                    ["Agregado", "Por canal", "Por campaña", "Por anuncio"]
+                )
+                
+                st.number_input("Intervalo de confianza (%)", min_value=80, max_value=99, value=95, step=1)
+            
+            with col2:
+                st.multiselect(
+                    "Simulaciones de escenarios",
+                    ["Conversión optimista", "Conversión pesimista", "Aumento de inversión", 
+                     "Reducción de inversión", "Cambio mix de canales", "Estacionalidad"],
+                    default=["Conversión optimista", "Conversión pesimista", "Aumento de inversión"]
+                )
+                
+                st.selectbox(
+                    "Formato de exportación",
+                    ["Excel compatible Power BI", "CSV compatible Power BI", "Excel estándar", "PDF"]
+                )
+                
+                st.checkbox("Incluir recomendaciones automatizadas", value=True)
+            
+            # Sección de proyecciones
+            st.subheader("Configuración de proyecciones")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.selectbox(
+                    "Método de proyección",
+                    ["Regresión lineal", "Media móvil", "Tendencia histórica", "Machine Learning"]
+                )
+                
+                st.number_input("Horizonte de proyección (días)", min_value=7, max_value=180, value=30)
+            
+            with col2:
+                st.checkbox("Ajustar por estacionalidad", value=True)
+                st.checkbox("Incluir indicadores de calidad de predicción", value=True)
+        
+        elif tipo_reporte == "Reporte de Status Comercial":
+            st.subheader("Configuración de Reporte de Status Comercial")
+            
+            # Selector de convocatoria
+            convocatoria = st.selectbox(
+                "Seleccionar convocatoria",
+                ["Marzo 2023", "Agosto 2023", "Octubre 2023", "Marzo 2024"]
+            )
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.checkbox("Incluir notas y observaciones", value=True)
+                st.checkbox("Mostrar histórico de convocatorias anteriores", value=False)
+            
+            with col2:
+                st.selectbox("Frecuencia de actualización", ["Diaria", "Semanal", "Quincenal"])
+                st.selectbox("Formato de exportación", ["PDF", "Excel", "Power BI"])
+            
+            # Previsualización de las barras de progreso
+            st.subheader("Vista previa de barras de progreso")
+            
+            # Simulación de datos de progreso
+            tiempo_total = 90  # días
+            tiempo_transcurrido = 45
+            meta_leads = 1000
+            leads_actuales = 660
+            meta_matriculas = 150
+            matriculas_actuales = 70
+            
+            # Mostrar barras de progreso
+            st.markdown(self._crear_barra_progreso(tiempo_transcurrido, tiempo_total, "Tiempo transcurrido"))
+            st.markdown(self._crear_barra_progreso(leads_actuales, meta_leads, "Leads generados"))
+            st.markdown(self._crear_barra_progreso(matriculas_actuales, meta_matriculas, "Matrículas"))
+            
+            # Predicción
+            st.subheader("Predicción de resultados finales")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.metric("Proyección de matrículas", "145", "96% de la meta")
+                st.metric("Intervalo de confianza", "±15", "90% de confianza")
+            
+            with col2:
+                st.metric("Leads faltantes", "340", "34% restante")
+                st.metric("Días restantes", "45", "50% del tiempo")
+            
+            # Acciones recomendadas
+            st.subheader("Acciones recomendadas")
+            st.info("Incrementar presupuesto en Google Ads para compensar el déficit actual de matrículas")
+            st.info("Revisar el mensaje creativo de las campañas de Facebook que están teniendo menor conversión de lo esperado")
+        
+        elif tipo_reporte == "Análisis multivariable":
             st.subheader("Configuración de análisis multivariable")
             
             variables = st.multiselect(
@@ -924,103 +1075,6 @@ class InterfazCargaDatos:
             st.checkbox("Incluir gráficos de correlación", value=True)
             st.checkbox("Normalizar variables", value=True)
         
-        elif tipo_reporte == "Análisis de atribución":
-            st.subheader("Configuración de análisis de atribución")
-            
-            st.selectbox(
-                "Modelo de atribución",
-                ["First Touch", "Last Touch", "Linear", "Time Decay", "U-Shaped", "Markov Chains", "Shapley", "Personalizado"]
-            )
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.number_input("Ventana de atribución (días)", min_value=1, max_value=90, value=30)
-                st.checkbox("Incluir medios offline", value=False)
-            
-            with col2:
-                st.multiselect(
-                    "Canales a incluir",
-                    ["Facebook Ads", "Google Ads", "Email Marketing", "Instagram", "TikTok", "Organic", "Referral", "Direct"],
-                    default=["Facebook Ads", "Google Ads", "Email Marketing", "Organic"]
-                )
-                st.checkbox("Comparar modelos de atribución", value=True)
-            
-            st.checkbox("Análisis de rutas de conversión", value=True)
-            
-        elif tipo_reporte == "Modelado predictivo":
-            st.subheader("Configuración de modelado predictivo")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.selectbox(
-                    "Objetivo de predicción",
-                    ["Matrículas futuras", "ROI por canal", "Asignación óptima de presupuesto", 
-                     "Tasa de conversión", "Demanda por programa", "Abandono"]
-                )
-                
-                st.selectbox(
-                    "Algoritmo de predicción",
-                    ["Regresión lineal", "Random Forest", "Gradient Boosting", "XGBoost", 
-                     "Prophet", "ARIMA", "LSTM", "Ensemble"]
-                )
-                
-                st.number_input("Horizonte de predicción (días)", min_value=1, max_value=365, value=90)
-            
-            with col2:
-                st.multiselect(
-                    "Variables predictoras",
-                    ["Histórico de conversión", "Estacionalidad", "Tendencias de mercado", 
-                     "Presupuesto de marketing", "Competencia", "Factores macroeconómicos"],
-                    default=["Histórico de conversión", "Estacionalidad"]
-                )
-                
-                st.slider("División train/test", 0.5, 0.9, 0.8, 0.05)
-                st.checkbox("Incluir intervalos de confianza", value=True)
-            
-            st.checkbox("Validación cruzada", value=True)
-            st.checkbox("Optimización de hiperparámetros", value=True)
-            st.text_area("Variables externas (una por línea)")
-        
-        # Configuración de visualización
-        st.subheader("Opciones de visualización avanzadas")
-        
-        visualizaciones = st.multiselect(
-            "Visualizaciones a incluir",
-            ["Mapas de calor", "Gráficos de dispersión 3D", "Análisis de redes", "Series temporales", 
-             "Árboles de decisión", "Clustering", "Gráficos de área", "KPIs dinámicos"],
-            default=["Mapas de calor", "Series temporales", "KPIs dinámicos"]
-        )
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.selectbox("Esquema de color", ["Corporate", "Analytical", "Divergent", "Sequential", "Personalizado"])
-        
-        with col2:
-            st.selectbox("Nivel de interactividad", ["Estático", "Interactivo básico", "Completamente interactivo"])
-        
-        with col3:
-            st.selectbox("Formato de exportación", ["HTML", "PDF", "PNG", "Interactive Dashboard"])
-        
-        # Programación y distribución
-        st.subheader("Programación y distribución")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            programar = st.checkbox("Programar generación periódica", value=False)
-            if programar:
-                st.selectbox("Frecuencia", ["Diaria", "Semanal", "Mensual", "Trimestral"])
-                st.selectbox("Día de envío", ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"])
-        
-        with col2:
-            distribuir = st.checkbox("Distribuir automáticamente", value=False)
-            if distribuir:
-                st.text_input("Destinatarios (emails separados por comas)")
-                st.text_area("Mensaje personalizado")
-        
         # Botón para generar el reporte
         if st.button("Generar reporte avanzado", type="primary", use_container_width=True):
             with st.spinner("Generando reporte avanzado..."):
@@ -1033,368 +1087,349 @@ class InterfazCargaDatos:
                 # Resultados simulados
                 st.success(f"Reporte avanzado '{tipo_reporte}' generado correctamente")
                 
-                # Vista previa
-                st.subheader("Vista previa")
-                
-                # Gráfico de ejemplo (simulado)
-                import numpy as np
-                
-                # Datos de ejemplo para la visualización
-                dates = pd.date_range(start='2023-01-01', periods=100)
-                np.random.seed(42)
-                values = np.cumsum(np.random.randn(100)) + 100
-                values2 = np.cumsum(np.random.randn(100)) + 120
-                
-                chart_data = pd.DataFrame({
-                    'Fecha': dates,
-                    'Métrica 1': values,
-                    'Métrica 2': values2
-                })
-                
-                # Mostrar visualización
-                st.line_chart(chart_data.set_index('Fecha'))
-                
-                # Insights generados
-                st.subheader("Insights principales")
-                
-                st.info("Se detectó una correlación significativa (r=0.78) entre la inversión en Facebook Ads y las matrículas efectivas con un retraso de 15 días.")
-                st.info("El modelo predictivo estima un aumento del 22% en conversiones para el próximo trimestre, con un intervalo de confianza del 95%.")
-                st.info("El análisis de atribución muestra que Google Ads está subvalorado en un 15% en el modelo actual de seguimiento.")
-                
-                # Acciones
-                st.subheader("Acciones recomendadas")
+                # Vista previa personalizada según el tipo de reporte
+                if tipo_reporte == "Reporte General Estratégico (Marketing)":
+                    self._mostrar_vista_previa_reporte_estrategico()
+                elif tipo_reporte == "Reporte de Status Comercial":
+                    self._mostrar_vista_previa_reporte_status()
+                else:
+                    # Vista previa genérica para otros tipos
+                    self._mostrar_vista_previa_generica()
+                    
+                # Acciones comunes para todos los reportes
+                st.subheader("Acciones")
                 
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
                     st.download_button(
-                        label="Descargar reporte completo",
+                        label=f"Descargar reporte",
                         data=b"contenido_simulado",
-                        file_name=f"reporte_avanzado_{tipo_reporte.lower().replace(' ', '_')}.pdf",
+                        file_name=f"reporte_{tipo_reporte.lower().replace(' ', '_')}.pdf",
                         mime="application/pdf"
                     )
                 
                 with col2:
-                    st.button("Programar seguimiento")
+                    st.button("Programar envío periódico")
                 
                 with col3:
-                    st.button("Compartir dashboard")
+                    st.button("Compartir reporte")
     
-    def mostrar_seccion_configuracion(self):
+    def _crear_barra_progreso(self, valor, max_valor, etiqueta, ancho=100):
         """
-        Muestra la interfaz de configuración del sistema.
+        Crea una barra de progreso HTML personalizada.
+        
+        Args:
+            valor: Valor actual
+            max_valor: Valor máximo (meta)
+            etiqueta: Etiqueta de la barra
+            ancho: Ancho en porcentaje
+            
+        Returns:
+            str: HTML de la barra de progreso
         """
-        st.title("Configuración - Motor de Decisión")
+        porcentaje = min(100, int((valor / max_valor) * 100))
+        barra_llena = "▓" * int(porcentaje / 10)
+        barra_vacia = "░" * (10 - int(porcentaje / 10))
         
-        # Crear pestañas para diferentes configuraciones
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "General", "Conexiones", "Usuarios", "Avanzado"
-        ])
+        barra_html = f"""
+        <div style="margin-bottom:15px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span style="font-weight:bold;">{etiqueta}</span>
+                <span>{porcentaje}%</span>
+            </div>
+            <div style="font-family:monospace; font-size:24px; line-height:1; color:#FF6F00;">
+                {barra_llena}{barra_vacia} {porcentaje}%
+            </div>
+        </div>
+        """
+        return barra_html
+    
+    def _mostrar_vista_previa_reporte_estrategico(self):
+        """Muestra una vista previa del reporte estratégico de marketing."""
+        st.subheader("Vista previa del Reporte Estratégico")
         
-        with tab1:
-            st.subheader("Configuración general")
-            
-            # Configuración básica
-            st.selectbox(
-                "Idioma de la interfaz",
-                ["Español", "English", "Português"],
-                index=0
-            )
-            
-            st.selectbox(
-                "Zona horaria",
-                ["(GMT-03:00) Buenos Aires", "(GMT-05:00) Bogotá", "(GMT-04:00) Santiago", 
-                 "(GMT+01:00) Madrid", "(GMT-06:00) Ciudad de México"],
-                index=0
-            )
-            
-            # Configuración de datos
-            st.subheader("Configuración de datos")
-            
-            # Rutas de directorios
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.text_input("Directorio de datos", value=str(self.dir_datos))
-                st.text_input("Directorio de reportes", value=self.config['paths']['output']['reportes'])
-            
-            with col2:
-                st.text_input("Directorio de logs", value=self.config['paths']['logs'])
-                st.text_input("Directorio de backups", value="backups/")
-            
-            # Configuración de análisis
-            st.subheader("Configuración de análisis")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.selectbox(
-                    "Frecuencia predeterminada",
-                    ["Diaria", "Semanal", "Mensual", "Trimestral"],
-                    index=1
-                )
-                
-                st.number_input(
-                    "Períodos mínimos para análisis",
-                    min_value=4,
-                    max_value=52,
-                    value=12
-                )
-            
-            with col2:
-                st.slider(
-                    "Nivel de confianza",
-                    min_value=0.8,
-                    max_value=0.99,
-                    value=0.95,
-                    step=0.01,
-                    format="%.2f"
-                )
-                
-                st.select_slider(
-                    "Detalle de logs",
-                    options=["ERROR", "WARNING", "INFO", "DEBUG"],
-                    value="INFO"
-                )
+        # Datos de ejemplo para visualización
+        fechas = pd.date_range(start='2023-01-01', periods=90)
+        np.random.seed(42)
+        valores_leads = np.cumsum(np.random.randn(90) * 5 + 20)  # Tendencia creciente con ruido
+        valores_matriculas = np.cumsum(np.random.randn(90) * 2 + 6)  # Tendencia creciente con ruido
         
-        with tab2:
-            st.subheader("Conexiones")
-            
-            # Google Sheets
-            st.subheader("Google Sheets")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.text_input("Ruta de credenciales", value=self.config['google_sheets']['credenciales'])
-                st.text_input("ID hoja de leads", value=self.config['google_sheets']['hojas']['leads'])
-            
-            with col2:
-                st.text_input("Ruta de token", value=self.config['google_sheets']['token'])
-                st.text_input("ID hoja de matrículas", value=self.config['google_sheets']['hojas']['matriculas'])
-            
-            st.checkbox(
-                "Sincronización automática", 
-                value=self.config['google_sheets']['sincronizacion_automatica']
-            )
-            
-            if self.config['google_sheets']['sincronizacion_automatica']:
-                st.number_input(
-                    "Intervalo de sincronización (segundos)",
-                    min_value=300,
-                    max_value=86400,
-                    value=self.config['google_sheets']['intervalo_sincronizacion'],
-                    step=300
-                )
-            
-            st.button("Probar conexión a Google Sheets")
-            
-            # Power BI
-            st.subheader("Power BI")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.selectbox(
-                    "Formato de exportación",
-                    ["CSV", "Excel", "JSON"],
-                    index=["csv", "xlsx", "json"].index(self.config['power_bi']['exportar_formato'].lower())
-                )
-            
-            with col2:
-                st.checkbox("Incluir gráficos", value=self.config['power_bi']['incluir_graficos'])
-                st.checkbox("Incluir predicciones", value=self.config['power_bi']['incluir_predicciones'])
-            
-            # Bases de datos
-            st.subheader("Base de datos")
-            
-            st.selectbox(
-                "Tipo de base de datos",
-                ["SQLite (local)", "MySQL", "PostgreSQL"],
-                index=0
-            )
-            
-            if st.checkbox("Configurar conexión a base de datos externa", value=False):
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.text_input("Host", value="localhost")
-                    st.text_input("Usuario", value="")
-                
-                with col2:
-                    st.text_input("Puerto", value="3306")
-                    st.text_input("Contraseña", type="password", value="")
-                
-                st.text_input("Nombre de base de datos", value="digitalteam")
-                st.button("Probar conexión")
+        # Crear proyección
+        fechas_futuras = pd.date_range(start=fechas[-1] + pd.Timedelta(days=1), periods=30)
+        proyeccion_leads = np.linspace(valores_leads[-1], valores_leads[-1] * 1.3, 30)
+        proyeccion_matriculas = np.linspace(valores_matriculas[-1], valores_matriculas[-1] * 1.2, 30)
         
-        with tab3:
-            st.subheader("Gestión de usuarios")
-            
-            # Usuarios actuales (simulados)
-            usuarios = [
-                {"nombre": "Administrador", "email": "admin@digitalteam.com", "rol": "Administrador", "ultimo_acceso": "Hoy, 10:45"},
-                {"nombre": "Marketing", "email": "marketing@digitalteam.com", "rol": "Editor", "ultimo_acceso": "Ayer, 15:30"},
-                {"nombre": "Analista", "email": "analista@digitalteam.com", "rol": "Visualizador", "ultimo_acceso": "Hace 3 días"}
-            ]
-            
-            # Mostrar usuarios
-            for usuario in usuarios:
-                with st.expander(f"{usuario['nombre']} ({usuario['email']})"):
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.write(f"**Rol:** {usuario['rol']}")
-                        st.write(f"**Último acceso:** {usuario['ultimo_acceso']}")
-                    
-                    with col2:
-                        st.button("Editar", key=f"edit_{usuario['email']}")
-                        st.button("Eliminar", key=f"delete_{usuario['email']}")
-            
-            # Agregar nuevo usuario
-            with st.expander("Agregar nuevo usuario", expanded=False):
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.text_input("Nombre", key="new_user_name")
-                    st.text_input("Correo electrónico", key="new_user_email")
-                
-                with col2:
-                    st.selectbox("Rol", ["Administrador", "Editor", "Visualizador"], key="new_user_role")
-                    st.text_input("Contraseña", type="password", key="new_user_password")
-                
-                st.button("Agregar usuario")
-            
-            # Configuración de autenticación
-            st.subheader("Configuración de autenticación")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.selectbox(
-                    "Método de autenticación",
-                    ["Básico (usuario/contraseña)", "Google OAuth", "LDAP", "Personalizado"],
-                    index=0
-                )
-                
-                st.number_input(
-                    "Tiempo de sesión (minutos)",
-                    min_value=5,
-                    max_value=1440,
-                    value=60,
-                    step=5
-                )
-            
-            with col2:
-                st.checkbox("Requerir contraseñas seguras", value=True)
-                st.checkbox("Bloquear después de 3 intentos fallidos", value=True)
-                st.checkbox("Registro de eventos de autenticación", value=True)
+        # Intervalos de confianza (95%)
+        ic_superior_leads = proyeccion_leads + np.linspace(10, 25, 30)
+        ic_inferior_leads = proyeccion_leads - np.linspace(10, 25, 30)
+        ic_superior_matriculas = proyeccion_matriculas + np.linspace(3, 8, 30)
+        ic_inferior_matriculas = proyeccion_matriculas - np.linspace(3, 8, 30)
         
-        with tab4:
-            st.subheader("Configuración avanzada")
-            
-            # Configuración de modelos
-            st.subheader("Configuración de modelos")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.multiselect(
-                    "Modelos disponibles",
-                    ["Linear", "Ridge", "Lasso", "Random Forest", "Gradient Boosting", "XGBoost", "ARIMA", "Prophet"],
-                    default=["Linear", "Random Forest", "Gradient Boosting"]
-                )
-                
-                st.selectbox(
-                    "Modelo predeterminado",
-                    ["Random Forest", "Linear", "Gradient Boosting"],
-                    index=0
-                )
-            
-            with col2:
-                st.number_input(
-                    "Seed para reproducibilidad",
-                    min_value=1,
-                    max_value=9999,
-                    value=42
-                )
-                
-                st.checkbox("Paralelización de entrenamientos", value=True)
-                st.checkbox("Guardar modelos entrenados", value=True)
-            
-            # Configuración de simulaciones
-            st.subheader("Configuración de simulaciones")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.number_input(
-                    "Simulaciones Monte Carlo",
-                    min_value=100,
-                    max_value=10000,
-                    value=1000,
-                    step=100
-                )
-            
-            with col2:
-                st.slider(
-                    "Precisión de predicciones",
-                    min_value=1,
-                    max_value=10,
-                    value=5
-                )
-            
-            # Configuración de visualización
-            st.subheader("Configuración de visualización")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.selectbox(
-                    "Estilo de gráficos",
-                    ["Seaborn", "Matplotlib", "Plotly", "Personalizado"],
-                    index=0
-                )
-                
-                st.multiselect(
-                    "Colores de marca",
-                    ["#FF6F00", "#2196F3", "#4CAF50", "#9C27B0", "#F44336"],
-                    default=["#FF6F00", "#2196F3"]
-                )
-            
-            with col2:
-                st.number_input(
-                    "DPI de imágenes",
-                    min_value=72,
-                    max_value=600,
-                    value=300,
-                    step=10
-                )
-                
-                st.text_input(
-                    "Formato de fecha predeterminado",
-                    value="%d/%m/%Y"
-                )
+        # Preparar datos para gráfico
+        df_historico = pd.DataFrame({
+            'Fecha': fechas,
+            'Leads': valores_leads,
+            'Matrículas': valores_matriculas
+        })
         
-        # Botones de acción
+        df_proyeccion = pd.DataFrame({
+            'Fecha': fechas_futuras,
+            'Leads (proyección)': proyeccion_leads,
+            'Leads (IC superior)': ic_superior_leads,
+            'Leads (IC inferior)': ic_inferior_leads,
+            'Matrículas (proyección)': proyeccion_matriculas,
+            'Matrículas (IC superior)': ic_superior_matriculas,
+            'Matrículas (IC inferior)': ic_inferior_matriculas
+        })
+        
+        # Mostrar gráficos
+        st.subheader("Tendencia y proyección de Leads")
+        fig_leads = self._crear_grafico_proyeccion(df_historico, df_proyeccion, 'Leads')
+        st.pyplot(fig_leads)
+        
+        st.subheader("Tendencia y proyección de Matrículas")
+        fig_matriculas = self._crear_grafico_proyeccion(df_historico, df_proyeccion, 'Matrículas')
+        st.pyplot(fig_matriculas)
+        
+        # Métricas clave
+        st.subheader("Métricas clave")
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("Guardar configuración", type="primary"):
-                st.success("Configuración guardada correctamente")
+            st.metric("CPA Actual", "$45.32", "-12% vs mes anterior")
+            st.metric("Elasticidad", "1.32", "+0.08 vs mes anterior")
         
         with col2:
-            if st.button("Restaurar valores predeterminados"):
-                st.info("Configuración restaurada a valores predeterminados")
+            st.metric("Proyección matrículas", "210", "+15% vs meta")
+            st.metric("Margen de error", "±22", "95% confianza")
         
         with col3:
-            if st.button("Exportar configuración"):
-                st.download_button(
-                    label="Descargar archivo de configuración",
-                    data=b"contenido_simulado",
-                    file_name="config_export.yaml",
-                    mime="application/x-yaml"
-                )
+            st.metric("ROI estimado", "324%", "+28% vs mes anterior")
+            st.metric("Conversión Lead-Matrícula", "8.2%", "+1.5% vs mes anterior")
+        
+        # Escenarios
+        st.subheader("Simulación de escenarios")
+        escenarios = pd.DataFrame({
+            'Escenario': ['Actual', 'Optimista', 'Pesimista', 'Aumento 20% inversión'],
+            'Leads estimados': [2500, 2800, 2300, 3000],
+            'Matrículas estimadas': [210, 250, 180, 240],
+            'CPA esperado': ['$45.32', '$40.50', '$50.20', '$48.10'],
+            'ROI proyectado': ['324%', '380%', '270%', '315%']
+        })
+        
+        st.table(escenarios)
+        
+        # Recomendaciones
+        st.subheader("Recomendaciones")
+        st.info("Aumentar inversión en Google Ads (Canal con mayor elasticidad actual)")
+        st.info("Optimizar mensajes de Facebook Ads para mejorar tasa de conversión")
+        st.info("Revisar segmentación en campañas de Instagram para reducir CPA")
+        
+    def _mostrar_vista_previa_reporte_status(self):
+        """Muestra una vista previa del reporte de status comercial."""
+        st.subheader("Vista previa del Reporte de Status Comercial")
+        
+        # Encabezado del reporte
+        st.markdown("""
+        <div style="background-color:#f0f0f0; padding:15px; border-radius:5px; margin-bottom:20px;">
+            <h3 style="margin:0; color:#FF6F00; text-align:center;">Estado de Convocatoria - Marzo 2024</h3>
+            <p style="text-align:center; margin:5px 0 0 0;">Periodo: 01/03/2024 al 15/03/2024</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Datos de ejemplo para el reporte
+        tiempo_total = 90  # días
+        tiempo_transcurrido = 45
+        meta_leads = 1000
+        leads_actuales = 660
+        meta_matriculas = 150
+        matriculas_actuales = 70
+        
+        # Barras de progreso
+        st.markdown("<h4>Progreso actual</h4>", unsafe_allow_html=True)
+        st.markdown(self._crear_barra_progreso(tiempo_transcurrido, tiempo_total, "Tiempo transcurrido"))
+        st.markdown(self._crear_barra_progreso(leads_actuales, meta_leads, "Leads generados"))
+        st.markdown(self._crear_barra_progreso(matriculas_actuales, meta_matriculas, "Matrículas"))
+        
+        # Estado quincenal
+        st.markdown("<h4>Estado quincenal</h4>", unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric("Leads última quincena", "250", "+15% vs quincena anterior")
+            st.metric("Matrículas última quincena", "32", "+8% vs quincena anterior")
+        
+        with col2:
+            st.metric("Conversión última quincena", "12.8%", "+0.5% vs quincena anterior")
+            st.metric("CPA última quincena", "$42.50", "-$3.75 vs quincena anterior")
+        
+        # Observaciones
+        st.markdown("<h4>Observaciones clave</h4>", unsafe_allow_html=True)
+        st.info("La campaña de remarketing está teniendo mejores resultados que lo esperado")
+        st.warning("Se detectó una disminución en la eficiencia de las campañas de Facebook durante fines de semana")
+        
+        # Predicción final
+        st.markdown("<h4>Predicción de matrícula final</h4>", unsafe_allow_html=True)
+        
+        # Datos de ejemplo para gráfico de predicción
+        dias = list(range(1, tiempo_total + 1))
+        matriculas_reales = [0] + [int(1.2 * i + np.random.randint(-3, 3)) for i in range(1, tiempo_transcurrido)]
+        
+        # Predicción para el resto del período
+        prediccion = [None] * (tiempo_transcurrido - 1)
+        for i in range(tiempo_transcurrido, tiempo_total + 1):
+            prediccion.append(matriculas_actuales + int((i - tiempo_transcurrido) * (150 - matriculas_actuales) / (tiempo_total - tiempo_transcurrido) + np.random.randint(-5, 5)))
+        
+        # Límites del intervalo de confianza
+        ic_superior = [None] * (tiempo_transcurrido - 1)
+        ic_inferior = [None] * (tiempo_transcurrido - 1)
+        for i in range(tiempo_transcurrido, tiempo_total + 1):
+            distancia = int((i - tiempo_transcurrido) * 0.5)
+            ic_superior.append(prediccion[i-1] + distancia)
+            ic_inferior.append(max(prediccion[i-1] - distancia, matriculas_actuales))
+        
+        # Crear DataFrame para el gráfico
+        df_prediccion = pd.DataFrame({
+            'Día': dias,
+            'Matrículas reales': matriculas_reales + [None] * (tiempo_total - tiempo_transcurrido + 1),
+            'Predicción': prediccion,
+            'IC Superior': ic_superior,
+            'IC Inferior': ic_inferior
+        })
+        
+        # Mostrar gráfico de predicción
+        fig = self._crear_grafico_prediccion(df_prediccion)
+        st.pyplot(fig)
+        
+        # Resumen de predicción
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Predicción final", "142 matrículas", "95% de la meta")
+        
+        with col2:
+            st.metric("Intervalo de confianza", "±15", "90% de confianza")
+        
+        with col3:
+            st.metric("Días restantes", "45", "50% del tiempo")
+        
+        # Acciones recomendadas
+        st.markdown("<h4>Acciones recomendadas</h4>", unsafe_allow_html=True)
+        st.warning("Incrementar presupuesto en Google Ads para compensar el déficit actual")
+        st.warning("Revisar el mensaje creativo de las campañas de Facebook")
+        st.info("Mantener la estrategia actual de remarketing que está funcionando bien")
+    
+    def _mostrar_vista_previa_generica(self):
+        """Muestra una vista previa genérica para otros tipos de reportes."""
+        st.subheader("Vista previa")
+        
+        # Gráfico de ejemplo (simulado)
+        import numpy as np
+        
+        # Datos de ejemplo para la visualización
+        dates = pd.date_range(start='2023-01-01', periods=100)
+        np.random.seed(42)
+        values = np.cumsum(np.random.randn(100)) + 100
+        values2 = np.cumsum(np.random.randn(100)) + 120
+        
+        chart_data = pd.DataFrame({
+            'Fecha': dates,
+            'Métrica 1': values,
+            'Métrica 2': values2
+        })
+        
+        # Mostrar visualización
+        st.line_chart(chart_data.set_index('Fecha'))
+        
+        # Insights generados
+        st.subheader("Insights principales")
+        
+        st.info("Se detectó una correlación significativa (r=0.78) entre la inversión en Facebook Ads y las matrículas efectivas con un retraso de 15 días.")
+        st.info("El modelo predictivo estima un aumento del 22% en conversiones para el próximo trimestre, con un intervalo de confianza del 95%.")
+        st.info("El análisis de atribución muestra que Google Ads está subvalorado en un 15% en el modelo actual de seguimiento.")
+    
+    def _crear_grafico_proyeccion(self, df_historico, df_proyeccion, metrica):
+        """
+        Crea un gráfico de proyección con intervalos de confianza.
+        """
+        import matplotlib.pyplot as plt
+        
+        # Crear figura
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Graficar datos históricos
+        ax.plot(df_historico['Fecha'], df_historico[metrica], 
+                color='#FF6F00', linewidth=2, label=f'{metrica} históricos')
+        
+        # Graficar proyección
+        ax.plot(df_proyeccion['Fecha'], df_proyeccion[f'{metrica} (proyección)'],
+                color='#2196F3', linewidth=2, linestyle='--', label=f'{metrica} proyectados')
+        
+        # Graficar intervalo de confianza
+        ax.fill_between(df_proyeccion['Fecha'],
+                        df_proyeccion[f'{metrica} (IC inferior)'],
+                        df_proyeccion[f'{metrica} (IC superior)'],
+                        color='#2196F3', alpha=0.2, label='Intervalo 95% conf.')
+        
+        # Configurar gráfico
+        ax.set_title(f'Tendencia y proyección de {metrica}', fontsize=14, fontweight='bold')
+        ax.set_xlabel('Fecha', fontsize=12)
+        ax.set_ylabel(f'Cantidad de {metrica}', fontsize=12)
+        ax.grid(True, linestyle='--', alpha=0.7)
+        ax.legend()
+        
+        # Añadir línea vertical en el presente
+        ax.axvline(x=df_historico['Fecha'].iloc[-1], color='black', linestyle='-', alpha=0.5)
+        ax.text(df_historico['Fecha'].iloc[-1], ax.get_ylim()[1]*0.9, 'Hoy', 
+                rotation=90, verticalalignment='top')
+        
+        # Ajustar layout
+        plt.tight_layout()
+        
+        return fig
+    
+    def _crear_grafico_prediccion(self, df):
+        """
+        Crea un gráfico de predicción con intervalos de confianza para el reporte de status.
+        """
+        import matplotlib.pyplot as plt
+        
+        # Crear figura
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Graficar datos reales
+        ax.plot(df['Día'], df['Matrículas reales'], 
+                color='#FF6F00', linewidth=2, marker='o', label='Matrículas reales')
+        
+        # Graficar predicción
+        ax.plot(df['Día'], df['Predicción'],
+                color='#2196F3', linewidth=2, linestyle='--', label='Predicción')
+        
+        # Graficar intervalo de confianza
+        ax.fill_between(df['Día'],
+                        df['IC Inferior'],
+                        df['IC Superior'],
+                        color='#2196F3', alpha=0.2, label='Intervalo 90% conf.')
+        
+        # Configurar gráfico
+        ax.set_title('Predicción de matrículas', fontsize=14, fontweight='bold')
+        ax.set_xlabel('Día de campaña', fontsize=12)
+        ax.set_ylabel('Cantidad de matrículas', fontsize=12)
+        ax.grid(True, linestyle='--', alpha=0.7)
+        ax.legend()
+        
+        # Añadir línea vertical en el día actual
+        dia_actual = df[df['Matrículas reales'].notna()].iloc[-1]['Día']
+        ax.axvline(x=dia_actual, color='black', linestyle='-', alpha=0.5)
+        ax.text(dia_actual, ax.get_ylim()[1]*0.9, 'Hoy', 
+                rotation=90, verticalalignment='top')
+        
+        # Ajustar layout
+        plt.tight_layout()
+        
+        return fig
 
 def main():
     """Función principal para ejecutar la interfaz de carga de datos."""
