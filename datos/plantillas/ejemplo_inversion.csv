@@ -1,0 +1,6 @@
+fecha,canal,monto,moneda,nombre_campana,id_campana,tipo_objetivo
+2024-01-01,Facebook,1500,USD,Campaña Brand Awareness,FB-BRAND-001,Awareness
+2024-01-15,Google Ads,2500,USD,Campaña Leads Generales,GA-LEAD-001,Conversión
+2024-02-01,Instagram,800,USD,Campaña Remarketing,IG-REM-001,Consideración
+2024-02-15,LinkedIn,1200,USD,Campaña B2B Profesionales,LI-B2B-001,Conversión
+2024-03-01,TikTok,500,USD,Campaña Jóvenes,TK-JOV-001,Awareness 
