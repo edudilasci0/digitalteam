@@ -1,0 +1,6 @@
+fecha_inicio_campana,fecha_fin_campana,canal,presupuesto_estimado,presupuesto_ejecutado,objetivo_leads,objetivo_matriculas,costo_estimado_lead,id_campana
+2024-01-01,2024-01-31,Facebook,5000,4800,200,50,25,FB-01
+2024-01-15,2024-02-15,Google Ads,7500,7200,300,75,25,GA-01
+2024-02-01,2024-02-28,Instagram,3000,3100,150,40,20,IG-01
+2024-02-15,2024-03-15,LinkedIn,4500,4300,180,45,25,LI-01
+2024-03-01,2024-03-31,Email Marketing,2000,1850,120,30,16.67,EM-01 

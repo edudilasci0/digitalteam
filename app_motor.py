@@ -237,6 +237,19 @@ def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
             st.info("No hay planificación cargada")
 
         plan_file = st.file_uploader("Subir planificación CSV", type=["csv"], key="plan")
+        
+        # Añadir ejemplo descargable para planificación
+        ejemplo_plan = Path("datos/plantillas/ejemplo_planificacion.csv")
+        if ejemplo_plan.exists():
+            with open(ejemplo_plan, "r") as f:
+                st.download_button(
+                    label="Descargar ejemplo de planificación",
+                    data=f,
+                    file_name="ejemplo_planificacion.csv",
+                    mime="text/csv",
+                    help="Descarga un archivo CSV de ejemplo para subir como planificación"
+                )
+        
         if plan_file is not None:
             df_plan = pd.read_csv(plan_file)
             save_dataframe(df_plan, plan_path)
@@ -253,6 +266,34 @@ def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
             st.info("No hay histórico cargado")
 
         hist_file = st.file_uploader("Subir histórico CSV", type=["csv"], key="hist")
+        
+        # Añadir ejemplos descargables para leads y matrículas
+        col_leads, col_mats = st.columns(2)
+        
+        with col_leads:
+            ejemplo_leads = Path("datos/plantillas/ejemplo_leads.csv")
+            if ejemplo_leads.exists():
+                with open(ejemplo_leads, "r") as f:
+                    st.download_button(
+                        label="Ejemplo de leads",
+                        data=f,
+                        file_name="ejemplo_leads.csv",
+                        mime="text/csv",
+                        help="Descarga un archivo CSV de ejemplo de leads"
+                    )
+        
+        with col_mats:
+            ejemplo_mats = Path("datos/plantillas/ejemplo_matriculas.csv")
+            if ejemplo_mats.exists():
+                with open(ejemplo_mats, "r") as f:
+                    st.download_button(
+                        label="Ejemplo de matrículas",
+                        data=f,
+                        file_name="ejemplo_matriculas.csv",
+                        mime="text/csv",
+                        help="Descarga un archivo CSV de ejemplo de matrículas"
+                    )
+        
         if hist_file is not None:
             df_hist = pd.read_csv(hist_file)
             save_dataframe(df_hist, hist_path)

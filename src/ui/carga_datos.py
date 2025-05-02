@@ -510,6 +510,46 @@ class InterfazCargaDatos:
             accept_multiple_files=False
         )
         
+        # Añadir ejemplos descargables
+        st.markdown("### Ejemplos de archivos para cargar:")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            ejemplo_leads = Path("datos/plantillas/ejemplo_leads.csv")
+            if ejemplo_leads.exists():
+                with open(ejemplo_leads, "r") as f:
+                    st.download_button(
+                        label="Ejemplo de Leads",
+                        data=f,
+                        file_name="ejemplo_leads.csv",
+                        mime="text/csv",
+                        help="Descarga un archivo CSV de ejemplo de leads"
+                    )
+        
+        with col2:
+            ejemplo_mats = Path("datos/plantillas/ejemplo_matriculas.csv")
+            if ejemplo_mats.exists():
+                with open(ejemplo_mats, "r") as f:
+                    st.download_button(
+                        label="Ejemplo de Matrículas",
+                        data=f,
+                        file_name="ejemplo_matriculas.csv",
+                        mime="text/csv",
+                        help="Descarga un archivo CSV de ejemplo de matrículas"
+                    )
+                    
+        with col3:
+            ejemplo_plan = Path("datos/plantillas/ejemplo_planificacion.csv")
+            if ejemplo_plan.exists():
+                with open(ejemplo_plan, "r") as f:
+                    st.download_button(
+                        label="Ejemplo de Planificación",
+                        data=f,
+                        file_name="ejemplo_planificacion.csv",
+                        mime="text/csv",
+                        help="Descarga un archivo CSV de ejemplo para planificación de campañas"
+                    )
+        
         # Opción alternativa: Google Sheets
         st.divider()
         st.subheader("O conecta con Google Sheets")

@@ -1,0 +1,6 @@
+fecha_creacion,canal,programa,id_lead,nombre,email,telefono,ciudad,estado,utm_source,utm_medium,utm_campaign
+2024-01-05,Facebook,Administración,L-2024-001,Ana García,ana.garcia@ejemplo.com,5551234567,Madrid,Interesado,facebook,social,ene2024
+2024-01-12,Google Ads,Marketing Digital,L-2024-002,Carlos Rodríguez,carlos.rodriguez@ejemplo.com,5559876543,Barcelona,Contactado,google,cpc,sem_ene
+2024-01-15,Instagram,Ingeniería Informática,L-2024-003,María López,maria.lopez@ejemplo.com,5554567890,Valencia,Evaluando,instagram,social,stories_ene
+2024-01-20,LinkedIn,MBA,L-2024-004,José Martínez,jose.martinez@ejemplo.com,5553456789,Sevilla,Interesado,linkedin,social,b2b_ene
+2024-01-25,Email Marketing,Ciencias de Datos,L-2024-005,Laura Sánchez,laura.sanchez@ejemplo.com,5552345678,Bilbao,Contactado,email,newsletter,data_monthly 

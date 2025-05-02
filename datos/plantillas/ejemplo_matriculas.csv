@@ -1,0 +1,6 @@
+fecha_matricula,id_lead,id_matricula,programa,monto,canal_origen,metodo_pago,descuento_aplicado,fecha_inicio_programa,campus
+2024-01-15,L-2024-001,M-2024-001,Administración,5000,Facebook,Tarjeta de crédito,500,2024-02-01,Madrid
+2024-01-25,L-2024-002,M-2024-002,Marketing Digital,4800,Google Ads,Transferencia bancaria,0,2024-02-15,Barcelona
+2024-02-05,L-2024-003,M-2024-003,Ingeniería Informática,6500,Instagram,Tarjeta de crédito,650,2024-03-01,Valencia
+2024-02-10,L-2024-004,M-2024-004,MBA,8000,LinkedIn,Financiamiento,0,2024-03-15,Madrid
+2024-02-20,L-2024-005,M-2024-005,Ciencias de Datos,5500,Email Marketing,Tarjeta de crédito,550,2024-03-01,Barcelona 
