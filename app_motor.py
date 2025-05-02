@@ -289,7 +289,8 @@ def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
                         data=f,
                         file_name="ejemplo_leads.csv",
                         mime="text/csv",
-                        help="Descarga un archivo CSV de ejemplo de leads"
+                        help="Descarga un archivo CSV de ejemplo de leads",
+                        key="leads_hist_ejemplo"
                     )
         
         with col2:
@@ -316,7 +317,8 @@ def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
                         data=f,
                         file_name="ejemplo_matriculas.csv",
                         mime="text/csv",
-                        help="Descarga un archivo CSV de ejemplo de matrículas"
+                        help="Descarga un archivo CSV de ejemplo de matrículas",
+                        key="mats_hist_ejemplo"
                     )
         
         st.markdown("**Inversión Histórica**")
@@ -342,7 +344,8 @@ def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
                     data=f,
                     file_name="ejemplo_inversion.csv",
                     mime="text/csv",
-                    help="Descarga un archivo CSV de ejemplo de inversión"
+                    help="Descarga un archivo CSV de ejemplo de inversión",
+                    key="inv_hist_ejemplo"
                 )
     
     # Tab 2: Convocatoria Actual
@@ -407,7 +410,8 @@ def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
                     data=f,
                     file_name="ejemplo_inversion.csv",
                     mime="text/csv",
-                    help="Descarga un archivo CSV de ejemplo de inversión"
+                    help="Descarga un archivo CSV de ejemplo de inversión",
+                    key="inv_act_ejemplo"
                 )
     
     # Tab 3: Planificación
@@ -433,7 +437,8 @@ def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
                     data=f,
                     file_name="ejemplo_planificacion.csv",
                     mime="text/csv",
-                    help="Descarga un archivo CSV de ejemplo para subir como planificación"
+                    help="Descarga un archivo CSV de ejemplo para subir como planificación",
+                    key="plan_ejemplo"
                 )
         
         if plan_file is not None:
@@ -711,7 +716,7 @@ def reporte_estrategico_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
     # 6. Exportación a PDF
     # ======================================================
     if PDF_AVAILABLE:
-        if st.button("Descargar PDF resumen"):
+        if st.button("Descargar PDF resumen", key="pdf_estrategico"):
             pdf = FPDF()
             pdf.add_page()
             pdf.set_font("Arial", size=12)
@@ -722,13 +727,13 @@ def reporte_estrategico_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
             for k, v in metricas.items():
                 pdf.cell(0, 10, txt=f"{k}: {v}", ln=True)
             pdf_output = pdf.output(dest="S").encode("latin-1")
-            st.download_button("PDF", data=pdf_output, file_name="reporte_estrategico.pdf", mime="application/pdf")
+            st.download_button("PDF", data=pdf_output, file_name="reporte_estrategico.pdf", mime="application/pdf", key="pdf_estrategico")
     else:
         st.info("Instale 'fpdf' para exportar PDF.")
 
     # 7. Exportación a PowerPoint
     if PPT_AVAILABLE:
-        if st.button("Descargar PowerPoint resumen"):
+        if st.button("Descargar PowerPoint resumen", key="pptx_estrategico"):
             prs = Presentation()
             slide = prs.slides.add_slide(prs.slide_layouts[0])
             title = slide.shapes.title
@@ -747,7 +752,7 @@ def reporte_estrategico_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
             ppt_buffer = BytesIO()
             prs.save(ppt_buffer)
             ppt_buffer.seek(0)
-            st.download_button("PPTX", data=ppt_buffer, file_name="reporte_estrategico.pptx", mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
+            st.download_button("PPTX", data=ppt_buffer, file_name="reporte_estrategico.pptx", mime="application/vnd.openxmlformats-officedocument.presentationml.presentation", key="pptx_estrategico")
     else:
         st.info("Instale 'python-pptx' para exportar PowerPoint.")
 
@@ -878,11 +883,12 @@ def reporte_comercial_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
             label="Descargar Excel",
             data=buffer,
             file_name="reporte_comercial.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="excel_comercial"
         )
     
     # PDF export
-    if PDF_AVAILABLE and col2.button("Generar PDF"):
+    if PDF_AVAILABLE and col2.button("Generar PDF", key="pdf_comercial"):
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", size=15)
@@ -897,7 +903,7 @@ def reporte_comercial_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
         pdf.cell(0, 10, txt=f"Proyección: {int(proy_final)} ± {int(margen_error)}", ln=True)
         
         pdf_output = pdf.output(dest="S").encode("latin-1")
-        st.download_button("Descargar PDF", data=pdf_output, file_name="reporte_comercial.pdf", mime="application/pdf")
+        st.download_button("Descargar PDF", data=pdf_output, file_name="reporte_comercial.pdf", mime="application/pdf", key="pdf_comercial")
 
 
 def reporte_exploratorio_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
@@ -995,7 +1001,7 @@ def reporte_exploratorio_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
     # Exportar
     st.subheader("Exportar análisis")
     col1, col2 = st.columns(2)
-    if col1.button("Descargar Excel diagnóstico"):
+    if col1.button("Descargar Excel diagnóstico", key="excel_diagnostico"):
         from io import BytesIO
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
@@ -1003,9 +1009,9 @@ def reporte_exploratorio_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
             if len(cols_corr) >= 2:
                 corr.to_excel(writer, sheet_name="Correlación")
         buffer.seek(0)
-        st.download_button("Excel", data=buffer, file_name="diagnostico.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.download_button("Excel", data=buffer, file_name="diagnostico.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="excel_diagnostico")
     
-    if PDF_AVAILABLE and col2.button("Generar PDF resumen"):
+    if PDF_AVAILABLE and col2.button("Generar PDF resumen", key="pdf_diagnostico"):
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", size=15)
@@ -1022,7 +1028,7 @@ def reporte_exploratorio_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
             pdf.cell(0, 10, txt=f"Anomalías detectadas: {len(anomalies)}", ln=True)
         
         pdf_output = pdf.output(dest="S").encode("latin-1")
-        st.download_button("Descargar PDF", data=pdf_output, file_name="diagnostico.pdf", mime="application/pdf")
+        st.download_button("Descargar PDF", data=pdf_output, file_name="diagnostico.pdf", mime="application/pdf", key="pdf_diagnostico")
 
 
 # ============================================================
