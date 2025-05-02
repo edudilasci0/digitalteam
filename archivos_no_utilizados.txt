@@ -1,0 +1,24 @@
+Archivos que parecen no estar conectados con la versión actual:
+
+1. Scripts duplicados o desconectados:
+./scripts/calculate_metrics.py (duplicado de calcular_metricas.py)
+./scripts/load_data.py (duplicado de cargar_datos.py)
+./scripts/generate_report.py (duplicado de generar_reportes.py)
+./scripts/data_loader.py (duplicado de cargar_datos.py o load_data.py)
+./scripts/rule_based_predictor.py (no está importado en ninguna parte)
+./scripts/validate_data.py (duplicado de validar_datos.py)
+
+2. Módulos sin referencias claras:
+./src/analysis/proyecciones.py (no hay import claros)
+./src/analysis/soporte_comercial.py (no hay import claros)
+./src/models/calendario_campanas.py (no hay import claros)
+./src/models/evaluador_modelos.py (no hay import claros)
+./src/models/model_manager.py (no hay import claros)
+./src/report/reporte_estrategico.py (no hay import claros)
+./src/visualizacion/visualizador.py (mencionado, pero probablemente redundante con la interfaz actual)
+
+3. Código sin llamar o duplicado:
+./dashboard/actualizar_datos.py (parece desconectado de la aplicación principal)
+./scripts/ejecutar_analisis_completo.py (script independiente)
+./scripts/ejecutar_sincronizacion.py (script independiente)
+./scripts/sistema_ajuste_automatico.py (script independiente)
