@@ -1,0 +1,11 @@
+ID,fecha_generacion,canal,programa,marca,estado,secuencia_canales,timestamp_interacciones
+LEAD001,2023-10-15,Facebook,MBA Online,GR,matriculado,"Facebook,Email,Orgánico","2023-10-15,2023-10-18,2023-10-22"
+LEAD002,2023-10-16,Google,MBA Presencial,GR,matriculado,"Google,Instagram","2023-10-16,2023-10-17"
+LEAD003,2023-10-17,Instagram,Marketing Digital,GR,contactado,"Instagram,Email","2023-10-17,2023-10-19"
+LEAD004,2023-10-18,Email,MBA Online,GR,matriculado,"Email,Facebook,Email","2023-10-18,2023-10-20,2023-10-23"
+LEAD005,2023-10-19,Orgánico,Marketing Digital,GR,rechazado,"Orgánico","2023-10-19"
+LEAD006,2023-10-20,Facebook,MBA Presencial,GR,matriculado,"Facebook,Google,Email","2023-10-20,2023-10-22,2023-10-25"
+LEAD007,2023-10-21,Google,MBA Online,GR,contactado,"Google,Instagram,Facebook","2023-10-21,2023-10-23,2023-10-26"
+LEAD008,2023-10-22,Instagram,Marketing Digital,GR,matriculado,"Instagram","2023-10-22"
+LEAD009,2023-10-23,Email,MBA Presencial,GR,rechazado,"Email,Facebook","2023-10-23,2023-10-25"
+LEAD010,2023-10-24,Facebook,Marketing Digital,GR,matriculado,"Facebook,Email,Instagram,Google","2023-10-24,2023-10-26,2023-10-28,2023-10-30" 

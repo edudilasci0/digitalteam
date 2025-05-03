@@ -1,7 +1,7 @@
 import os
 import json
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List, Optional
 import datetime
 
 import pandas as pd
@@ -9,6 +9,7 @@ import numpy as np
 import streamlit as st
 import joblib
 from sklearn.ensemble import RandomForestRegressor
+import matplotlib.pyplot as plt
 
 try:
     from fpdf import FPDF  # generación rápida de PDF
@@ -74,13 +75,21 @@ st.set_page_config(
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 
+# Definir las marcas predefinidas
+MARCAS_PREDEFINIDAS = ["GR", "PG", "ADV", "GMBA", "WZ", "AJA"]
+
+# Configuración de estructura de directorios
 REPORTE_DIR_NAME = "reportes"
+HISTORICO_DIR_NAME = "historico"
+ACTUAL_DIR_NAME = "actual"
+LEADS_DIR_NAME = "leads"
+MATRICULAS_DIR_NAME = "matriculas"
 PLAN_FILE = "plan_actual.csv"
 HIST_FILE = "historico.csv"
 MODEL_FILE = "modelo_rf.joblib"
 
 # Versión del sistema
-VERSION = "1.0.0"
+VERSION = "2.0.0"
 
 # Tooltip ayudas contextuales
 TOOLTIPS = {
@@ -88,14 +97,30 @@ TOOLTIPS = {
     "cpl": "CPL (Costo Por Lead) es el costo promedio de obtener un lead potencial.",
     "leads": "Prospecto interesado en un programa educativo.",
     "prediccion_ml": "Predicción basada en Machine Learning (RandomForest) con intervalos de confianza.",
-    "anomalia": "Valor que se desvía significativamente del resto (> 3 desviaciones estándar)."
+    "anomalia": "Valor que se desvía significativamente del resto (> 3 desviaciones estándar).",
+    "atribucion": "Modelo que determina cómo asignar el mérito a cada canal en la conversión de un lead."
 }
 
 def get_brand_path(brand: str) -> Path:
-    """Devuelve la ruta del directorio de la marca y lo crea si no existe."""
+    """Devuelve la ruta del directorio de la marca y crea la estructura completa si no existe."""
+    # Directorio principal de la marca
     brand_path = DATA_DIR / brand
     brand_path.mkdir(exist_ok=True)
+    
+    # Subdirectorios principales
     (brand_path / REPORTE_DIR_NAME).mkdir(exist_ok=True)
+    (brand_path / HISTORICO_DIR_NAME).mkdir(exist_ok=True)
+    (brand_path / ACTUAL_DIR_NAME).mkdir(exist_ok=True)
+    
+    # Subdirectorios de histórico
+    (brand_path / HISTORICO_DIR_NAME / LEADS_DIR_NAME).mkdir(exist_ok=True)
+    (brand_path / HISTORICO_DIR_NAME / MATRICULAS_DIR_NAME).mkdir(exist_ok=True)
+    
+    # Subdirectorios para año actual
+    current_year = str(datetime.datetime.now().year)
+    (brand_path / HISTORICO_DIR_NAME / LEADS_DIR_NAME / current_year).mkdir(exist_ok=True)
+    (brand_path / HISTORICO_DIR_NAME / MATRICULAS_DIR_NAME / current_year).mkdir(exist_ok=True)
+    
     return brand_path
 
 
@@ -109,6 +134,92 @@ def load_dataframe(path: Path) -> pd.DataFrame:
     if path.exists():
         return pd.read_csv(path)
     return pd.DataFrame()
+
+
+def get_weekly_filename(brand: str, week: int, year: int, data_type: str) -> str:
+    """Genera un nombre de archivo estándar para datos semanales."""
+    return f"{brand}_{data_type}_S{week:02d}_{year}.csv"
+
+
+def save_weekly_data(df: pd.DataFrame, brand: str, week: int, year: int, data_type: str):
+    """Guarda datos semanales en el directorio apropiado."""
+    brand_path = get_brand_path(brand)
+    
+    if data_type == "leads":
+        target_dir = brand_path / HISTORICO_DIR_NAME / LEADS_DIR_NAME / str(year)
+    elif data_type == "matriculas":
+        target_dir = brand_path / HISTORICO_DIR_NAME / MATRICULAS_DIR_NAME / str(year)
+    else:
+        target_dir = brand_path / HISTORICO_DIR_NAME
+    
+    target_dir.mkdir(exist_ok=True)
+    filename = get_weekly_filename(brand, week, year, data_type)
+    save_dataframe(df, target_dir / filename)
+
+
+def load_all_historical_data(brand: str, data_type: str) -> pd.DataFrame:
+    """Carga todos los datos históricos de un tipo específico."""
+    brand_path = get_brand_path(brand)
+    
+    if data_type == "leads":
+        base_dir = brand_path / HISTORICO_DIR_NAME / LEADS_DIR_NAME
+    elif data_type == "matriculas":
+        base_dir = brand_path / HISTORICO_DIR_NAME / MATRICULAS_DIR_NAME
+    else:
+        # Para otros tipos, buscar en el directorio principal
+        if (brand_path / f"{data_type}_historico.csv").exists():
+            return load_dataframe(brand_path / f"{data_type}_historico.csv")
+        return pd.DataFrame()
+    
+    # Buscar en todos los subdirectorios de años
+    dfs = []
+    for year_dir in base_dir.iterdir():
+        if year_dir.is_dir():
+            for file in year_dir.glob(f"{brand}_{data_type}_*.csv"):
+                try:
+                    df = load_dataframe(file)
+                    dfs.append(df)
+                except Exception as e:
+                    st.warning(f"Error al cargar {file}: {str(e)}")
+    
+    # Combinar todos los DataFrames
+    if dfs:
+        return pd.concat(dfs, ignore_index=True)
+    return pd.DataFrame()
+
+
+def check_for_duplicates(df: pd.DataFrame, id_column: str = "ID") -> pd.DataFrame:
+    """Verifica si hay IDs duplicados en el DataFrame."""
+    if id_column in df.columns:
+        duplicates = df[df.duplicated(subset=[id_column], keep=False)]
+        return duplicates
+    return pd.DataFrame()
+
+
+def validate_data_structure(df: pd.DataFrame, data_type: str) -> dict:
+    """Valida la estructura del DataFrame según el tipo de datos."""
+    results = {"valid": True, "missing_columns": [], "message": ""}
+    
+    required_columns = {
+        "planificacion": ["fecha", "marca", "canal", "presupuesto", "leads_estimados", "objetivo_matriculas"],
+        "historico": ["fecha", "marca", "canal", "leads", "matriculas", "inversion"],
+        "leads": ["ID", "fecha_generacion", "canal", "programa", "marca", "estado"],
+        "matriculas": ["ID", "fecha_matricula", "canal", "marca", "programa"]
+    }
+    
+    if data_type in required_columns:
+        for col in required_columns[data_type]:
+            if col not in df.columns:
+                results["missing_columns"].append(col)
+                results["valid"] = False
+        
+        if not results["valid"]:
+            results["message"] = f"Faltan columnas requeridas: {', '.join(results['missing_columns'])}"
+    else:
+        results["valid"] = False
+        results["message"] = f"Tipo de datos '{data_type}' no reconocido."
+    
+    return results
 
 
 # ============================================================
@@ -184,6 +295,229 @@ def predict_matriculas_interval(model, df_future: pd.DataFrame,
     
     return preds, (lower_bound, upper_bound)
 
+
+# ============================================================
+# Módulo de Atribución Multicanal
+# ============================================================
+
+def calcular_atribucion(df_leads: pd.DataFrame, df_matriculas: pd.DataFrame, modelo: str = "ultimo_clic") -> pd.DataFrame:
+    """
+    Calcula la atribución de matrículas a canales según diferentes modelos.
+    
+    Args:
+        df_leads: DataFrame con leads individuales (debe tener ID, canal)
+        df_matriculas: DataFrame con matrículas individuales (debe tener ID)
+        modelo: Modelo de atribución a utilizar
+            - "ultimo_clic": Atribuye al último canal de contacto
+            - "primer_clic": Atribuye al primer canal de contacto
+            - "lineal": Distribuye equitativamente entre todos los canales de contacto
+            - "tiempo": Atribución con decaimiento temporal
+            - "posicional": Mayor peso a primer y último contacto
+            - "shapley": Usa cálculo de valor Shapley (computacionalmente intensivo)
+    
+    Returns:
+        DataFrame con la atribución por canal
+    """
+    # Validar inputs
+    if df_leads.empty or df_matriculas.empty:
+        return pd.DataFrame()
+    
+    if "ID" not in df_leads.columns or "ID" not in df_matriculas.columns:
+        st.warning("Se requiere la columna 'ID' en ambos DataFrames para calcular atribución")
+        return pd.DataFrame()
+    
+    if "canal" not in df_leads.columns:
+        st.warning("Se requiere la columna 'canal' en el DataFrame de leads")
+        return pd.DataFrame()
+    
+    # Obtener IDs de leads que se convirtieron en matrículas
+    leads_convertidos = df_leads[df_leads["ID"].isin(df_matriculas["ID"])]
+    
+    # Si no hay secuencia de canales, usar canal único
+    if "secuencia_canales" not in leads_convertidos.columns:
+        # Crear secuencia basada en canal único
+        leads_convertidos["secuencia_canales"] = leads_convertidos["canal"]
+    
+    # Implementar diferentes modelos de atribución
+    resultados = {}
+    
+    if modelo == "ultimo_clic":
+        # Para cada matrícula, atribuir 100% al último canal
+        for id_lead, grupo in leads_convertidos.groupby("ID"):
+            ultimo_canal = grupo.iloc[-1]["canal"]
+            if ultimo_canal in resultados:
+                resultados[ultimo_canal] += 1
+            else:
+                resultados[ultimo_canal] = 1
+    
+    elif modelo == "primer_clic":
+        # Para cada matrícula, atribuir 100% al primer canal
+        for id_lead, grupo in leads_convertidos.groupby("ID"):
+            primer_canal = grupo.iloc[0]["canal"]
+            if primer_canal in resultados:
+                resultados[primer_canal] += 1
+            else:
+                resultados[primer_canal] = 1
+    
+    elif modelo == "lineal":
+        # Distribuir equitativamente entre todos los canales
+        for id_lead, grupo in leads_convertidos.groupby("ID"):
+            canales = grupo["canal"].unique()
+            valor_por_canal = 1.0 / len(canales)
+            for canal in canales:
+                if canal in resultados:
+                    resultados[canal] += valor_por_canal
+                else:
+                    resultados[canal] = valor_por_canal
+    
+    elif modelo == "tiempo":
+        # Atribución con decaimiento temporal (más recientes tienen más peso)
+        for id_lead, grupo in leads_convertidos.groupby("ID"):
+            # Ordenar por fecha si está disponible
+            if "fecha_generacion" in grupo.columns:
+                grupo = grupo.sort_values("fecha_generacion")
+            
+            # Aplicar decaimiento exponencial
+            total_contactos = len(grupo)
+            for i, (_, contacto) in enumerate(grupo.iterrows()):
+                # Peso exponencial: los últimos tienen más peso
+                peso = 2 ** (i / (total_contactos - 1)) if total_contactos > 1 else 1
+                canal = contacto["canal"]
+                
+                if canal in resultados:
+                    resultados[canal] += peso
+                else:
+                    resultados[canal] = peso
+        
+        # Normalizar para que la suma total sea igual al número de matrículas
+        total_peso = sum(resultados.values())
+        total_matriculas = len(leads_convertidos["ID"].unique())
+        for canal in resultados:
+            resultados[canal] = (resultados[canal] / total_peso) * total_matriculas
+    
+    elif modelo == "posicional":
+        # 40% primer contacto, 40% último contacto, 20% distribuido entre el resto
+        for id_lead, grupo in leads_convertidos.groupby("ID"):
+            # Ordenar por fecha si está disponible
+            if "fecha_generacion" in grupo.columns:
+                grupo = grupo.sort_values("fecha_generacion")
+            
+            canales = grupo["canal"].tolist()
+            if len(canales) == 1:
+                # Si solo hay un canal, recibe el 100%
+                canal = canales[0]
+                if canal in resultados:
+                    resultados[canal] += 1
+                else:
+                    resultados[canal] = 1
+            else:
+                # Primer contacto (40%)
+                primer_canal = canales[0]
+                if primer_canal in resultados:
+                    resultados[primer_canal] += 0.4
+                else:
+                    resultados[primer_canal] = 0.4
+                
+                # Último contacto (40%)
+                ultimo_canal = canales[-1]
+                if ultimo_canal in resultados:
+                    resultados[ultimo_canal] += 0.4
+                else:
+                    resultados[ultimo_canal] = 0.4
+                
+                # Contactos intermedios (20% distribuido)
+                canales_intermedios = canales[1:-1]
+                if canales_intermedios:
+                    valor_por_canal = 0.2 / len(canales_intermedios)
+                    for canal in canales_intermedios:
+                        if canal in resultados:
+                            resultados[canal] += valor_por_canal
+                        else:
+                            resultados[canal] = valor_por_canal
+                else:
+                    # Si no hay canales intermedios, dividir el 20% entre primer y último
+                    resultados[primer_canal] += 0.1
+                    resultados[ultimo_canal] += 0.1
+    
+    elif modelo == "shapley":
+        # Implementación simplificada del valor Shapley
+        # Esta es una aproximación ya que el verdadero cálculo de Shapley es computacionalmente intensivo
+        canales_unicos = df_leads["canal"].unique()
+        total_matriculas = len(leads_convertidos["ID"].unique())
+        
+        # Inicializar resultados
+        for canal in canales_unicos:
+            resultados[canal] = 0
+        
+        # Para cada canal, calcular su contribución marginal
+        for canal in canales_unicos:
+            # Leads que pasaron por este canal
+            leads_con_canal = df_leads[df_leads["canal"] == canal]["ID"].unique()
+            
+            # Matrículas que provienen de leads que pasaron por este canal
+            matriculas_con_canal = df_matriculas[df_matriculas["ID"].isin(leads_con_canal)]
+            
+            # Matrículas sin este canal
+            matriculas_sin_canal = df_matriculas[~df_matriculas["ID"].isin(leads_con_canal)]
+            
+            # Calcular tasas de conversión con y sin este canal
+            tasa_con_canal = len(matriculas_con_canal) / len(leads_con_canal) if len(leads_con_canal) > 0 else 0
+            leads_sin_canal = df_leads[~df_leads["ID"].isin(leads_con_canal)]["ID"].unique()
+            tasa_sin_canal = len(matriculas_sin_canal) / len(leads_sin_canal) if len(leads_sin_canal) > 0 else 0
+            
+            # La contribución es proporcional a la diferencia de tasas
+            contribucion = max(0, tasa_con_canal - tasa_sin_canal)
+            
+            # Normalizar
+            resultados[canal] = contribucion
+        
+        # Normalizar para que la suma sea igual al total de matrículas
+        if sum(resultados.values()) > 0:
+            factor = total_matriculas / sum(resultados.values())
+            for canal in resultados:
+                resultados[canal] *= factor
+    
+    else:
+        st.warning(f"Modelo de atribución '{modelo}' no implementado")
+        return pd.DataFrame()
+    
+    # Convertir resultados a DataFrame
+    df_atribucion = pd.DataFrame({
+        "canal": list(resultados.keys()),
+        "atribucion": list(resultados.values())
+    })
+    
+    # Calcular porcentaje de atribución
+    total_atribucion = df_atribucion["atribucion"].sum()
+    df_atribucion["porcentaje"] = df_atribucion["atribucion"] / total_atribucion * 100
+    
+    # Ordenar por atribución descendente
+    df_atribucion = df_atribucion.sort_values("atribucion", ascending=False).reset_index(drop=True)
+    
+    return df_atribucion
+
+
+def comparar_modelos_atribucion(df_leads: pd.DataFrame, df_matriculas: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+    """
+    Compara diferentes modelos de atribución y retorna los resultados.
+    
+    Args:
+        df_leads: DataFrame con leads individuales
+        df_matriculas: DataFrame con matrículas individuales
+    
+    Returns:
+        Diccionario con los resultados de cada modelo de atribución
+    """
+    modelos = ["ultimo_clic", "primer_clic", "lineal", "tiempo", "posicional", "shapley"]
+    resultados = {}
+    
+    for modelo in modelos:
+        df_atribucion = calcular_atribucion(df_leads, df_matriculas, modelo)
+        resultados[modelo] = df_atribucion
+    
+    return resultados
+
+
 # ============================================================
 # UI auxiliar
 # ============================================================
@@ -192,22 +526,51 @@ def predict_matriculas_interval(model, df_future: pd.DataFrame,
 def sidebar_brand_selector() -> str:
     """Permite seleccionar o crear una marca desde la barra lateral."""
     st.sidebar.header("🎯 Selección de marca")
+    
+    # Mostrar todas las marcas existentes
     existing_brands = [d.name for d in DATA_DIR.iterdir() if d.is_dir()]
-
+    
+    # Inicializar la marca actual en la sesión
     if "current_brand" not in st.session_state:
         st.session_state.current_brand = existing_brands[0] if existing_brands else ""
 
+    # Opciones de selección: Nueva marca, Marcas predefinidas, o Marcas existentes
     brand_option = st.sidebar.selectbox(
-        "Marca", options=["<Nueva marca>"] + existing_brands, index=0 if not existing_brands else existing_brands.index(st.session_state.current_brand) + 1
+        "Marca", 
+        options=["<Nueva marca>", "<Marcas predefinidas>"] + existing_brands, 
+        index=0 if not existing_brands else existing_brands.index(st.session_state.current_brand) + 2 if st.session_state.current_brand in existing_brands else 0
     )
 
     if brand_option == "<Nueva marca>":
         new_brand = st.sidebar.text_input("Nombre de la nueva marca")
         if new_brand:
             st.session_state.current_brand = new_brand.strip()
+    elif brand_option == "<Marcas predefinidas>":
+        # Permitir seleccionar marcas predefinidas
+        selected_brand = st.sidebar.selectbox(
+            "Seleccionar marca predefinida:", 
+            MARCAS_PREDEFINIDAS,
+            index=0
+        )
+        if selected_brand:
+            st.session_state.current_brand = selected_brand
+            # Crear estructura de directorios para la marca predefinida
+            get_brand_path(selected_brand)
     else:
         st.session_state.current_brand = brand_option
-
+    
+    # Mostrar la configuración avanzada
+    if st.sidebar.checkbox("Configuración avanzada"):
+        st.sidebar.write("Opciones de carga de datos:")
+        if "carga_acumulativa" not in st.session_state:
+            st.session_state.carga_acumulativa = True
+        
+        st.session_state.carga_acumulativa = st.sidebar.radio(
+            "Modo de carga:",
+            ["Acumulativa (actualizar archivo principal)", "Semanal (archivos separados)"],
+            index=0 if st.session_state.carga_acumulativa else 1
+        ) == "Acumulativa (actualizar archivo principal)"
+    
     return st.session_state.current_brand
 
 
@@ -215,34 +578,33 @@ def sidebar_brand_selector() -> str:
 # Lógica de carga de datos
 # ============================================================
 
-
 def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Interfaz para cargar datos históricos y de la convocatoria actual."""
     st.subheader("📥 Carga de datos")
-
-    # Permitir seleccionar marcas predefinidas
-    marcas_predefinidas = ["GR", "PR", "WZ", "ADV", "UNISUD", "AJA"]
-    if brand not in marcas_predefinidas and st.checkbox("Usar una marca predefinida"):
-        brand = st.selectbox("Seleccionar marca:", marcas_predefinidas)
-        st.session_state.current_brand = brand
-
+    
+    # Obtener la ruta a los directorios de la marca
     brand_path = get_brand_path(brand)
-
+    
     # Configurar camino de archivos
     plan_path = brand_path / PLAN_FILE
     hist_path = brand_path / HIST_FILE
-    leads_path = brand_path / "leads_actual.csv"
-    matriculas_path = brand_path / "matriculas_actual.csv"
-    inversion_path = brand_path / "inversion_actual.csv"
-
+    
+    # Directorio actual para datos agregados
+    actual_dir = brand_path / ACTUAL_DIR_NAME
+    leads_path = actual_dir / "leads_actual.csv"
+    matriculas_path = actual_dir / "matriculas_actual.csv"
+    inversion_path = actual_dir / "inversion_actual.csv"
+    
     # Configuración de la convocatoria
     st.subheader("⚙️ Configuración de convocatoria")
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         semana_actual = st.number_input("Semana actual del año:", min_value=1, max_value=52, value=datetime.datetime.now().isocalendar()[1])
     with col2:
-        duracion_convocatoria = st.number_input("Duración total (semanas):", min_value=1, max_value=26, value=13)
+        year_actual = st.number_input("Año:", min_value=2020, max_value=2030, value=datetime.datetime.now().year)
     with col3:
+        duracion_convocatoria = st.number_input("Duración total (semanas):", min_value=1, max_value=26, value=13)
+    with col4:
         semanas_restantes = st.number_input("Semanas restantes:", min_value=0, max_value=26, value=max(0, duracion_convocatoria - (datetime.datetime.now().isocalendar()[1] % duracion_convocatoria)))
     
     # Guardar configuración en session_state
@@ -251,172 +613,21 @@ def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     
     st.session_state.config_convocatoria = {
         "semana_actual": semana_actual,
+        "year_actual": year_actual,
         "duracion_convocatoria": duracion_convocatoria,
         "semanas_restantes": semanas_restantes,
         "progreso": (duracion_convocatoria - semanas_restantes) / duracion_convocatoria
     }
+    
+    # Mostrar modo de carga actual
+    st.info(f"Modo de carga: {'Acumulativa' if st.session_state.get('carga_acumulativa', True) else 'Semanal (archivos separados)'}")
 
-    # Sección de carga de archivos - 3 pestañas para diferentes tipos de datos
-    tabs = st.tabs(["Datos Históricos", "Convocatoria Actual", "Planificación"])
+    # Sección de carga de archivos - Pestañas para diferentes tipos de datos
+    tabs = st.tabs(["Planificación", "Datos Agregados", "Leads Individuales", "Matrículas Individuales"])
     
-    # Tab 1: Datos Históricos
+    # Tab 1: Planificación
     with tabs[0]:
-        st.markdown("### Datos Históricos")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("**Leads Históricos**")
-            if (brand_path / "leads_historico.csv").exists():
-                df_leads_hist = load_dataframe(brand_path / "leads_historico.csv")
-                st.success(f"Leads históricos cargados: {len(df_leads_hist)} registros")
-                st.dataframe(df_leads_hist.head(3))
-            else:
-                st.info("No hay leads históricos cargados")
-            
-            leads_hist_file = st.file_uploader("Subir archivo de leads históricos", type=["csv"], key="leads_hist")
-            if leads_hist_file is not None:
-                df_leads_hist = pd.read_csv(leads_hist_file)
-                save_dataframe(df_leads_hist, brand_path / "leads_historico.csv")
-                st.success(f"Leads históricos guardados: {len(df_leads_hist)} registros")
-            
-            # Ejemplo de leads
-            ejemplo_leads = Path("datos/plantillas/ejemplo_leads.csv")
-            if ejemplo_leads.exists():
-                with open(ejemplo_leads, "r") as f:
-                    st.download_button(
-                        label="Ejemplo de leads",
-                        data=f,
-                        file_name="ejemplo_leads.csv",
-                        mime="text/csv",
-                        help="Descarga un archivo CSV de ejemplo de leads",
-                        key="leads_hist_ejemplo"
-                    )
-        
-        with col2:
-            st.markdown("**Matrículas Históricas**")
-            if (brand_path / "matriculas_historico.csv").exists():
-                df_mats_hist = load_dataframe(brand_path / "matriculas_historico.csv")
-                st.success(f"Matrículas históricas cargadas: {len(df_mats_hist)} registros")
-                st.dataframe(df_mats_hist.head(3))
-            else:
-                st.info("No hay matrículas históricas cargadas")
-            
-            mats_hist_file = st.file_uploader("Subir archivo de matrículas históricas", type=["csv"], key="mats_hist")
-            if mats_hist_file is not None:
-                df_mats_hist = pd.read_csv(mats_hist_file)
-                save_dataframe(df_mats_hist, brand_path / "matriculas_historico.csv")
-                st.success(f"Matrículas históricas guardadas: {len(df_mats_hist)} registros")
-            
-            # Ejemplo de matrículas
-            ejemplo_mats = Path("datos/plantillas/ejemplo_matriculas.csv")
-            if ejemplo_mats.exists():
-                with open(ejemplo_mats, "r") as f:
-                    st.download_button(
-                        label="Ejemplo de matrículas",
-                        data=f,
-                        file_name="ejemplo_matriculas.csv",
-                        mime="text/csv",
-                        help="Descarga un archivo CSV de ejemplo de matrículas",
-                        key="mats_hist_ejemplo"
-                    )
-        
-        st.markdown("**Inversión Histórica**")
-        if (brand_path / "inversion_historico.csv").exists():
-            df_inv_hist = load_dataframe(brand_path / "inversion_historico.csv")
-            st.success(f"Inversión histórica cargada: {len(df_inv_hist)} registros")
-            st.dataframe(df_inv_hist.head(3))
-        else:
-            st.info("No hay datos de inversión histórica cargados")
-        
-        inv_hist_file = st.file_uploader("Subir archivo de inversión histórica", type=["csv"], key="inv_hist")
-        if inv_hist_file is not None:
-            df_inv_hist = pd.read_csv(inv_hist_file)
-            save_dataframe(df_inv_hist, brand_path / "inversion_historico.csv")
-            st.success(f"Inversión histórica guardada: {len(df_inv_hist)} registros")
-        
-        # Ejemplo de inversión
-        ejemplo_inv = Path("datos/plantillas/ejemplo_inversion.csv")
-        if ejemplo_inv.exists():
-            with open(ejemplo_inv, "r") as f:
-                st.download_button(
-                    label="Ejemplo de inversión",
-                    data=f,
-                    file_name="ejemplo_inversion.csv",
-                    mime="text/csv",
-                    help="Descarga un archivo CSV de ejemplo de inversión",
-                    key="inv_hist_ejemplo"
-                )
-    
-    # Tab 2: Convocatoria Actual
-    with tabs[1]:
-        st.markdown("### Datos de Convocatoria Actual")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("**Leads Actuales**")
-            if leads_path.exists():
-                df_leads_act = load_dataframe(leads_path)
-                st.success(f"Leads actuales cargados: {len(df_leads_act)} registros")
-                st.dataframe(df_leads_act.head(3))
-            else:
-                df_leads_act = pd.DataFrame()
-                st.info("No hay leads actuales cargados")
-            
-            leads_file = st.file_uploader("Subir archivo de leads actuales", type=["csv"], key="leads_act")
-            if leads_file is not None:
-                df_leads_act = pd.read_csv(leads_file)
-                save_dataframe(df_leads_act, leads_path)
-                st.success(f"Leads actuales guardados: {len(df_leads_act)} registros")
-        
-        with col2:
-            st.markdown("**Matrículas Actuales**")
-            if matriculas_path.exists():
-                df_mats_act = load_dataframe(matriculas_path)
-                st.success(f"Matrículas actuales cargadas: {len(df_mats_act)} registros")
-                st.dataframe(df_mats_act.head(3))
-            else:
-                df_mats_act = pd.DataFrame()
-                st.info("No hay matrículas actuales cargadas")
-            
-            mats_file = st.file_uploader("Subir archivo de matrículas actuales", type=["csv"], key="mats_act")
-            if mats_file is not None:
-                df_mats_act = pd.read_csv(mats_file)
-                save_dataframe(df_mats_act, matriculas_path)
-                st.success(f"Matrículas actuales guardadas: {len(df_mats_act)} registros")
-        
-        st.markdown("**Inversión Actual**")
-        if inversion_path.exists():
-            df_inv_act = load_dataframe(inversion_path)
-            st.success(f"Inversión actual cargada: {len(df_inv_act)} registros")
-            st.dataframe(df_inv_act.head(3))
-        else:
-            df_inv_act = pd.DataFrame()
-            st.info("No hay datos de inversión actual cargados")
-        
-        inv_file = st.file_uploader("Subir archivo de inversión actual", type=["csv"], key="inv_act")
-        if inv_file is not None:
-            df_inv_act = pd.read_csv(inv_file)
-            save_dataframe(df_inv_act, inversion_path)
-            st.success(f"Inversión actual guardada: {len(df_inv_act)} registros")
-            
-        # Ejemplo de inversión
-        ejemplo_inv = Path("datos/plantillas/ejemplo_inversion.csv")
-        if ejemplo_inv.exists():
-            with open(ejemplo_inv, "r") as f:
-                st.download_button(
-                    label="Ejemplo de inversión",
-                    data=f,
-                    file_name="ejemplo_inversion.csv",
-                    mime="text/csv",
-                    help="Descarga un archivo CSV de ejemplo de inversión",
-                    key="inv_act_ejemplo"
-                )
-    
-    # Tab 3: Planificación
-    with tabs[2]:
-        st.markdown("### Planificación")
+        st.markdown("### Planificación de campaña")
         
         if plan_path.exists():
             df_plan = load_dataframe(plan_path)
@@ -426,7 +637,7 @@ def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
             df_plan = pd.DataFrame()
             st.info("No hay planificación cargada")
 
-        plan_file = st.file_uploader("Subir planificación CSV", type=["csv"], key="plan")
+        plan_file = st.file_uploader("Subir planificación (CSV/Excel)", type=["csv", "xlsx"], key="plan")
         
         # Añadir ejemplo descargable para planificación
         ejemplo_plan = Path("datos/plantillas/ejemplo_planificacion.csv")
@@ -442,19 +653,306 @@ def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
                 )
         
         if plan_file is not None:
-            df_plan = pd.read_csv(plan_file)
-            save_dataframe(df_plan, plan_path)
-            st.success("Planificación guardada correctamente")
+            try:
+                if plan_file.name.endswith('.csv'):
+                    df_plan = pd.read_csv(plan_file)
+                else:
+                    df_plan = pd.read_excel(plan_file)
+                
+                # Validar estructura
+                validation = validate_data_structure(df_plan, "planificacion")
+                if validation["valid"]:
+                    # Asegurarse de que la marca en el archivo coincida
+                    if "marca" in df_plan.columns:
+                        df_plan["marca"] = brand
+                    save_dataframe(df_plan, plan_path)
+                    st.success("Planificación guardada correctamente")
+                else:
+                    st.error(validation["message"])
+                    st.info("Columnas requeridas: fecha, marca, canal, presupuesto, leads_estimados, objetivo_matriculas")
+            except Exception as e:
+                st.error(f"Error al cargar planificación: {str(e)}")
     
+    # Tab 2: Datos Agregados
+    with tabs[1]:
+        st.markdown("### Datos Agregados Semanales")
+        
+        # Crear formulario para carga de datos agregados
+        with st.form("form_datos_agregados"):
+            st.write("Ingrese los datos agregados de la semana")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                fecha = st.date_input("Fecha", value=datetime.datetime.now())
+                canal = st.selectbox("Canal", options=["Facebook", "Instagram", "Google", "Email", "Orgánico", "Otro"])
+                leads = st.number_input("Leads generados", min_value=0, value=0)
+            
+            with col2:
+                matriculas = st.number_input("Matrículas confirmadas", min_value=0, value=0)
+                inversion = st.number_input("Inversión ($)", min_value=0.0, value=0.0)
+                observaciones = st.text_input("Observaciones")
+            
+            submitted = st.form_submit_button("Guardar datos de la semana")
+            
+            if submitted:
+                # Crear DataFrame con los datos agregados
+                nuevo_registro = pd.DataFrame({
+                    "fecha": [fecha.strftime("%Y-%m-%d")],
+                    "marca": [brand],
+                    "canal": [canal],
+                    "leads": [leads],
+                    "matriculas": [matriculas],
+                    "inversion": [inversion],
+                    "observaciones": [observaciones]
+                })
+                
+                # Modo acumulativo: Actualizar archivo principal
+                if st.session_state.get("carga_acumulativa", True):
+                    # Cargar histórico existente si existe
+                    df_hist = load_dataframe(hist_path) if hist_path.exists() else pd.DataFrame()
+                    
+                    # Combinar con nuevos datos
+                    if not df_hist.empty:
+                        df_hist = pd.concat([df_hist, nuevo_registro], ignore_index=True)
+                    else:
+                        df_hist = nuevo_registro
+                    
+                    # Guardar histórico actualizado
+                    save_dataframe(df_hist, hist_path)
+                    st.success(f"Datos agregados al histórico (total: {len(df_hist)} registros)")
+                
+                # Modo semanal: Guardar archivo separado
+                else:
+                    try:
+                        # Guardar archivo semanal
+                        save_weekly_data(nuevo_registro, brand, semana_actual, year_actual, "historico")
+                        st.success(f"Datos guardados en archivo semanal (Semana {semana_actual}, {year_actual})")
+                    except Exception as e:
+                        st.error(f"Error al guardar archivo semanal: {str(e)}")
+        
+        # Permitir también carga por archivo
+        st.markdown("### O cargue un archivo")
+        hist_file = st.file_uploader("Subir histórico agregado (CSV/Excel)", type=["csv", "xlsx"], key="historico")
+        
+        if hist_file is not None:
+            try:
+                if hist_file.name.endswith('.csv'):
+                    df_hist_new = pd.read_csv(hist_file)
+                else:
+                    df_hist_new = pd.read_excel(hist_file)
+                
+                # Validar estructura
+                validation = validate_data_structure(df_hist_new, "historico")
+                if validation["valid"]:
+                    # Asegurarse que la marca es correcta
+                    if "marca" in df_hist_new.columns:
+                        df_hist_new["marca"] = brand
+                    
+                    # Guardar según el modo seleccionado
+                    if st.session_state.get("carga_acumulativa", True):
+                        # Cargar histórico existente si existe
+                        df_hist = load_dataframe(hist_path) if hist_path.exists() else pd.DataFrame()
+                        
+                        # Combinar con nuevos datos
+                        if not df_hist.empty:
+                            df_hist = pd.concat([df_hist, df_hist_new], ignore_index=True)
+                        else:
+                            df_hist = df_hist_new
+                        
+                        # Guardar histórico actualizado
+                        save_dataframe(df_hist, hist_path)
+                        st.success(f"Datos agregados al histórico (total: {len(df_hist)} registros)")
+                    else:
+                        # Guardar como archivo semanal
+                        save_weekly_data(df_hist_new, brand, semana_actual, year_actual, "historico")
+                        st.success(f"Datos guardados en archivo semanal (Semana {semana_actual}, {year_actual})")
+                else:
+                    st.error(validation["message"])
+                    st.info("Columnas requeridas: fecha, marca, canal, leads, matriculas, inversion")
+            except Exception as e:
+                st.error(f"Error al cargar histórico: {str(e)}")
+        
+        # Mostrar histórico actual
+        if hist_path.exists():
+            with st.expander("Ver histórico actual"):
+                df_hist = load_dataframe(hist_path)
+                st.dataframe(df_hist)
+    
+    # Tab 3: Leads Individuales
+    with tabs[2]:
+        st.markdown("### Datos Individuales de Leads")
+        
+        # Cargar leads actuales si existen
+        if leads_path.exists():
+            df_leads_act = load_dataframe(leads_path)
+            st.success(f"Leads actuales cargados: {len(df_leads_act)} registros")
+            with st.expander("Ver primeros registros"):
+                st.dataframe(df_leads_act.head(5))
+        else:
+            df_leads_act = pd.DataFrame()
+            st.info("No hay leads actuales cargados")
+        
+        # Subir archivo de leads
+        leads_file = st.file_uploader("Subir archivo de leads (CSV/Excel)", type=["csv", "xlsx"], key="leads")
+        
+        if leads_file is not None:
+            try:
+                if leads_file.name.endswith('.csv'):
+                    df_leads_new = pd.read_csv(leads_file)
+                else:
+                    df_leads_new = pd.read_excel(leads_file)
+                
+                # Validar estructura
+                validation = validate_data_structure(df_leads_new, "leads")
+                if validation["valid"]:
+                    # Verificar duplicados
+                    duplicados = check_for_duplicates(df_leads_new)
+                    if not duplicados.empty:
+                        st.warning(f"Se encontraron {len(duplicados)} IDs duplicados en el archivo.")
+                        with st.expander("Ver duplicados"):
+                            st.dataframe(duplicados)
+                    
+                    # Asegurarse que la marca es correcta
+                    if "marca" in df_leads_new.columns:
+                        df_leads_new["marca"] = brand
+                    
+                    # Guardar según el modo seleccionado
+                    if st.session_state.get("carga_acumulativa", True):
+                        # Combinar con leads actuales si existen
+                        if not df_leads_act.empty:
+                            # Eliminar duplicados basados en ID
+                            if "ID" in df_leads_act.columns and "ID" in df_leads_new.columns:
+                                df_leads_act = df_leads_act[~df_leads_act["ID"].isin(df_leads_new["ID"])]
+                            df_leads_act = pd.concat([df_leads_act, df_leads_new], ignore_index=True)
+                        else:
+                            df_leads_act = df_leads_new
+                        
+                        # Guardar leads actualizados
+                        save_dataframe(df_leads_act, leads_path)
+                        st.success(f"Leads actualizados (total: {len(df_leads_act)} registros)")
+                    else:
+                        # Guardar como archivo semanal
+                        save_weekly_data(df_leads_new, brand, semana_actual, year_actual, "leads")
+                        st.success(f"Leads guardados en archivo semanal (Semana {semana_actual}, {year_actual})")
+                else:
+                    st.error(validation["message"])
+                    st.info("Columnas requeridas: ID, fecha_generacion, canal, programa, marca, estado")
+            except Exception as e:
+                st.error(f"Error al cargar leads: {str(e)}")
+        
+        # Ejemplo de leads
+        ejemplo_leads = Path("datos/plantillas/ejemplo_leads.csv")
+        if ejemplo_leads.exists():
+            with open(ejemplo_leads, "r") as f:
+                st.download_button(
+                    label="Ejemplo de estructura de leads",
+                    data=f,
+                    file_name="ejemplo_leads.csv",
+                    mime="text/csv",
+                    help="Descarga un archivo CSV de ejemplo de leads",
+                    key="leads_ejemplo"
+                )
+    
+    # Tab 4: Matrículas Individuales
+    with tabs[3]:
+        st.markdown("### Datos Individuales de Matrículas")
+        
+        # Cargar matrículas actuales si existen
+        if matriculas_path.exists():
+            df_mats_act = load_dataframe(matriculas_path)
+            st.success(f"Matrículas actuales cargadas: {len(df_mats_act)} registros")
+            with st.expander("Ver primeros registros"):
+                st.dataframe(df_mats_act.head(5))
+        else:
+            df_mats_act = pd.DataFrame()
+            st.info("No hay matrículas actuales cargadas")
+        
+        # Subir archivo de matrículas
+        mats_file = st.file_uploader("Subir archivo de matrículas (CSV/Excel)", type=["csv", "xlsx"], key="matriculas")
+        
+        if mats_file is not None:
+            try:
+                if mats_file.name.endswith('.csv'):
+                    df_mats_new = pd.read_csv(mats_file)
+                else:
+                    df_mats_new = pd.read_excel(mats_file)
+                
+                # Validar estructura
+                validation = validate_data_structure(df_mats_new, "matriculas")
+                if validation["valid"]:
+                    # Verificar duplicados
+                    duplicados = check_for_duplicates(df_mats_new)
+                    if not duplicados.empty:
+                        st.warning(f"Se encontraron {len(duplicados)} IDs duplicados en el archivo.")
+                        with st.expander("Ver duplicados"):
+                            st.dataframe(duplicados)
+                    
+                    # Asegurarse que la marca es correcta
+                    if "marca" in df_mats_new.columns:
+                        df_mats_new["marca"] = brand
+                    
+                    # Guardar según el modo seleccionado
+                    if st.session_state.get("carga_acumulativa", True):
+                        # Combinar con matrículas actuales si existen
+                        if not df_mats_act.empty:
+                            # Eliminar duplicados basados en ID
+                            if "ID" in df_mats_act.columns and "ID" in df_mats_new.columns:
+                                df_mats_act = df_mats_act[~df_mats_act["ID"].isin(df_mats_new["ID"])]
+                            df_mats_act = pd.concat([df_mats_act, df_mats_new], ignore_index=True)
+                        else:
+                            df_mats_act = df_mats_new
+                        
+                        # Guardar matrículas actualizadas
+                        save_dataframe(df_mats_act, matriculas_path)
+                        st.success(f"Matrículas actualizadas (total: {len(df_mats_act)} registros)")
+                    else:
+                        # Guardar como archivo semanal
+                        save_weekly_data(df_mats_new, brand, semana_actual, year_actual, "matriculas")
+                        st.success(f"Matrículas guardadas en archivo semanal (Semana {semana_actual}, {year_actual})")
+                else:
+                    st.error(validation["message"])
+                    st.info("Columnas requeridas: ID, fecha_matricula, canal, marca, programa")
+            except Exception as e:
+                st.error(f"Error al cargar matrículas: {str(e)}")
+        
+        # Ejemplo de matrículas
+        ejemplo_mats = Path("datos/plantillas/ejemplo_matriculas.csv")
+        if ejemplo_mats.exists():
+            with open(ejemplo_mats, "r") as f:
+                st.download_button(
+                    label="Ejemplo de estructura de matrículas",
+                    data=f,
+                    file_name="ejemplo_matriculas.csv",
+                    mime="text/csv",
+                    help="Descarga un archivo CSV de ejemplo de matrículas",
+                    key="mats_ejemplo"
+                )
+    
+    # Preparar DataFrame para uso en reportes
     # Generar DataFrame histórico combinado para compatibilidad con funciones existentes
     df_hist = pd.DataFrame()
     
-    # Si tenemos datos actuales, combinarlos
-    if 'df_leads_act' in locals() and not df_leads_act.empty and 'df_mats_act' in locals() and not df_mats_act.empty:
+    # Cargar el histórico si existe
+    if hist_path.exists():
+        df_hist = load_dataframe(hist_path)
+    elif not st.session_state.get("carga_acumulativa", True):
+        # Si estamos en modo semanal, combinar todos los archivos semanales
+        historico_files = []
+        for week in range(1, 53):
+            week_file = get_weekly_filename(brand, week, year_actual, "historico")
+            week_path = brand_path / HISTORICO_DIR_NAME / week_file
+            if week_path.exists():
+                historico_files.append(load_dataframe(week_path))
+        
+        if historico_files:
+            df_hist = pd.concat(historico_files, ignore_index=True)
+    
+    # Si no hay histórico pero hay datos actuales, combinarlos
+    if df_hist.empty and 'df_leads_act' in locals() and not df_leads_act.empty and 'df_mats_act' in locals() and not df_mats_act.empty:
         # Número de leads
-        if 'fecha_creacion' in df_leads_act.columns:
-            leads_por_fecha = df_leads_act.groupby('fecha_creacion').size().reset_index(name='leads')
-            leads_por_fecha.rename(columns={'fecha_creacion': 'fecha'}, inplace=True)
+        if 'fecha_generacion' in df_leads_act.columns:
+            leads_por_fecha = df_leads_act.groupby('fecha_generacion').size().reset_index(name='leads')
+            leads_por_fecha.rename(columns={'fecha_generacion': 'fecha'}, inplace=True)
             
             # Número de matrículas
             if 'fecha_matricula' in df_mats_act.columns:
@@ -464,15 +962,21 @@ def load_data_ui(brand: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
                 # Combinar
                 df_hist = pd.merge(leads_por_fecha, mats_por_fecha, on='fecha', how='outer').fillna(0)
                 
+                # Agregar marca y canal por defecto
+                df_hist['marca'] = brand
+                df_hist['canal'] = 'Agregado'
+                
                 # Agregar inversión si existe
-                if 'df_inv_act' in locals() and not df_inv_act.empty and 'fecha' in df_inv_act.columns and 'monto' in df_inv_act.columns:
-                    df_hist = pd.merge(df_hist, df_inv_act[['fecha', 'monto']], on='fecha', how='left')
-                    df_hist.rename(columns={'monto': 'inversion'}, inplace=True)
-                    df_hist['inversion'].fillna(0, inplace=True)
-    
-    # Si no tenemos datos actuales pero sí históricos, usar esos
-    elif hist_path.exists():
-        df_hist = load_dataframe(hist_path)
+                if 'inversion_path' in locals() and inversion_path.exists():
+                    df_inv_act = load_dataframe(inversion_path)
+                    if not df_inv_act.empty and 'fecha' in df_inv_act.columns and 'monto' in df_inv_act.columns:
+                        df_hist = pd.merge(df_hist, df_inv_act[['fecha', 'monto']], on='fecha', how='left')
+                        df_hist.rename(columns={'monto': 'inversion'}, inplace=True)
+                        df_hist['inversion'].fillna(0, inplace=True)
+                    else:
+                        df_hist['inversion'] = 0
+                else:
+                    df_hist['inversion'] = 0
     
     # Guardar el DataFrame combinado para compatibilidad
     if not df_hist.empty:
@@ -686,7 +1190,97 @@ def reporte_estrategico_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
         st.info("Modelo predictivo no disponible: cargue columnas leads, inversion y matriculas suficientes.")
 
     # ======================================================
-    # 5. Alertas automáticas basadas en tiempo restante
+    # 5. Módulo de Atribución Multicanal (NUEVO)
+    # ======================================================
+    st.subheader("Análisis de Atribución Multicanal")
+    cols = st.columns([3, 1])
+    cols[0].write("Compare cómo diferentes modelos asignan el mérito a cada canal")
+    if cols[1].button("❓ Ayuda Atribución", key="help_atribucion"):
+        show_help("atribucion")
+    
+    # Cargar leads y matrículas individuales
+    brand_path = get_brand_path(st.session_state.current_brand)
+    leads_path = brand_path / ACTUAL_DIR_NAME / "leads_actual.csv"
+    matriculas_path = brand_path / ACTUAL_DIR_NAME / "matriculas_actual.csv"
+    
+    df_leads = load_dataframe(leads_path)
+    df_matriculas = load_dataframe(matriculas_path)
+    
+    if not df_leads.empty and not df_matriculas.empty:
+        # Selector de modelo de atribución
+        modelo_atribucion = st.selectbox(
+            "Seleccione modelo de atribución:",
+            [
+                "Último clic (último contacto recibe 100% del mérito)",
+                "Primer clic (primer contacto recibe 100% del mérito)",
+                "Lineal (mérito distribuido equitativamente)",
+                "Decaimiento temporal (más peso a contactos recientes)",
+                "Posicional (40% primer, 40% último, 20% intermedios)",
+                "Shapley value (basado en contribución marginal)"
+            ],
+            index=0
+        )
+        
+        # Mapeo de opciones a modelos
+        modelo_map = {
+            "Último clic (último contacto recibe 100% del mérito)": "ultimo_clic",
+            "Primer clic (primer contacto recibe 100% del mérito)": "primer_clic",
+            "Lineal (mérito distribuido equitativamente)": "lineal",
+            "Decaimiento temporal (más peso a contactos recientes)": "tiempo",
+            "Posicional (40% primer, 40% último, 20% intermedios)": "posicional",
+            "Shapley value (basado en contribución marginal)": "shapley"
+        }
+        
+        # Calcular atribución con el modelo seleccionado
+        modelo_seleccionado = modelo_map[modelo_atribucion]
+        df_atribucion = calcular_atribucion(df_leads, df_matriculas, modelo_seleccionado)
+        
+        if not df_atribucion.empty:
+            # Mostrar resultados
+            st.write(f"Atribución de matrículas según modelo: **{modelo_atribucion}**")
+            st.dataframe(df_atribucion)
+            
+            # Visualizar como gráfico de barras
+            st.bar_chart(df_atribucion.set_index("canal")["atribucion"])
+            
+            # Opción para comparar todos los modelos
+            if st.checkbox("Comparar todos los modelos de atribución"):
+                todos_resultados = comparar_modelos_atribucion(df_leads, df_matriculas)
+                
+                # Crear tabla comparativa
+                tabla_comparativa = pd.DataFrame()
+                
+                for modelo, df in todos_resultados.items():
+                    if not df.empty:
+                        # Tomar solo los 3 principales canales para cada modelo
+                        top_canales = df.head(3)[["canal", "atribucion"]]
+                        
+                        # Renombrar columnas
+                        top_canales = top_canales.copy()
+                        top_canales["modelo"] = modelo
+                        top_canales.rename(columns={"atribucion": "valor"}, inplace=True)
+                        
+                        # Agregar a la tabla comparativa
+                        tabla_comparativa = pd.concat([tabla_comparativa, top_canales], ignore_index=True)
+                
+                if not tabla_comparativa.empty:
+                    # Crear vista pivot para comparar modelos
+                    pivot = tabla_comparativa.pivot_table(
+                        index="canal", 
+                        columns="modelo", 
+                        values="valor", 
+                        aggfunc="sum"
+                    ).fillna(0)
+                    
+                    st.write("Comparativa de atribución por modelo (top canales)")
+                    st.dataframe(pivot)
+        else:
+            st.warning("No se pudo generar el análisis de atribución. Verifique los datos.")
+    else:
+        st.info("Cargue datos individuales de leads y matrículas para utilizar el análisis de atribución multicanal.")
+
+    # ======================================================
+    # 6. Alertas automáticas basadas en tiempo restante
     # ======================================================
     st.subheader("Alertas destacadas")
     
@@ -713,10 +1307,13 @@ def reporte_estrategico_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
         st.error(f"¡URGENTE! Quedan solo {semanas_restantes} semanas y se ha alcanzado solo el {metricas['Progreso Matriculas']*100:.1f}% del objetivo de matrículas.")
 
     # ======================================================
-    # 6. Exportación a PDF
+    # 7. Exportación a PDF
     # ======================================================
+    st.subheader("Exportar reportes")
+    col1, col2, col3 = st.columns(3)
+    
     if PDF_AVAILABLE:
-        if st.button("Descargar PDF resumen", key="pdf_estrategico"):
+        if col1.button("Descargar PDF resumen", key="pdf_estrategico"):
             pdf = FPDF()
             pdf.add_page()
             pdf.set_font("Arial", size=12)
@@ -729,11 +1326,11 @@ def reporte_estrategico_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
             pdf_output = pdf.output(dest="S").encode("latin-1")
             st.download_button("PDF", data=pdf_output, file_name="reporte_estrategico.pdf", mime="application/pdf", key="pdf_estrategico")
     else:
-        st.info("Instale 'fpdf' para exportar PDF.")
+        col1.info("Instale 'fpdf' para exportar PDF.")
 
-    # 7. Exportación a PowerPoint
+    # 8. Exportación a PowerPoint
     if PPT_AVAILABLE:
-        if st.button("Descargar PowerPoint resumen", key="pptx_estrategico"):
+        if col2.button("Descargar PowerPoint resumen", key="pptx_estrategico"):
             prs = Presentation()
             slide = prs.slides.add_slide(prs.slide_layouts[0])
             title = slide.shapes.title
@@ -754,7 +1351,45 @@ def reporte_estrategico_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
             ppt_buffer.seek(0)
             st.download_button("PPTX", data=ppt_buffer, file_name="reporte_estrategico.pptx", mime="application/vnd.openxmlformats-officedocument.presentationml.presentation", key="pptx_estrategico")
     else:
-        st.info("Instale 'python-pptx' para exportar PowerPoint.")
+        col2.info("Instale 'python-pptx' para exportar PowerPoint.")
+    
+    # 9. Exportación a Excel
+    if col3.button("Descargar Excel detallado", key="excel_estrategico"):
+        from io import BytesIO
+        buffer = BytesIO()
+        with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+            # Datos históricos
+            df_hist.to_excel(writer, sheet_name="Histórico", index=False)
+            
+            # Métricas
+            pd.DataFrame({
+                "Métrica": list(metricas.keys()),
+                "Valor": list(metricas.values())
+            }).to_excel(writer, sheet_name="Métricas", index=False)
+            
+            # Escenarios
+            escenarios.to_excel(writer, sheet_name="Escenarios", index=False)
+            
+            # Comparativa por canal
+            if "df_canales" in locals():
+                df_canales.to_excel(writer, sheet_name="Canales", index=False)
+            
+            # Atribución multicanal si está disponible
+            if "df_atribucion" in locals() and not df_atribucion.empty:
+                df_atribucion.to_excel(writer, sheet_name="Atribución", index=False)
+            
+            # Predicciones si están disponibles
+            if "df_pred" in locals():
+                df_pred.to_excel(writer, sheet_name="Predicciones", index=False)
+        
+        buffer.seek(0)
+        st.download_button(
+            label="Descargar Excel",
+            data=buffer,
+            file_name="reporte_estrategico.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="excel_estrategico_btn"
+        )
 
 
 def reporte_comercial_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
@@ -801,16 +1436,26 @@ def reporte_comercial_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
     col2.metric("Semanas restantes", f"{semanas_restantes}")
     col3.metric("Progreso", f"{progreso*100:.1f}%")
 
-    # Barras de progreso
+    # Barras de progreso mejoradas
     st.subheader("Progreso de la convocatoria")
-    def barra(texto, valor, total):
+    
+    # Función para crear barras de progreso con colores
+    def barra_color(texto, valor, total):
         pct = int(100 * valor / total) if total else 0
+        # Determinar color según porcentaje
+        if pct < 60:
+            color = "🔴"
+        elif pct < 90:
+            color = "🟠"
+        else:
+            color = "🟢"
+        
         bar = "▓" * (pct // 10) + "░" * (10 - pct // 10)
-        st.write(f"{texto:<25} {bar} {pct}%")
+        st.write(f"{texto:<25} {bar} {color} {pct}%")
 
-    barra("Tiempo transcurrido", dias_transcurridos, tiempo_total)
-    barra("Leads entregados", leads_actuales, leads_obj)
-    barra("Matrículas confirmadas", mats_actuales, mats_obj)
+    barra_color("Tiempo transcurrido", dias_transcurridos, tiempo_total)
+    barra_color("Leads entregados", leads_actuales, leads_obj)
+    barra_color("Matrículas confirmadas", mats_actuales, mats_obj)
 
     # Proyección simple lineal basada en el tiempo transcurrido
     ratio_tiempo = progreso  # Progreso de tiempo
@@ -833,130 +1478,29 @@ def reporte_comercial_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
     ic_lower = max(0, proy_final - margen_error)
     ic_upper = proy_final + margen_error
     
+    # Determinar estado basado en la proyección vs objetivo
+    if proy_final >= mats_obj:
+        estado = "normal"
+        estado_texto = "✅ Normal (en camino al objetivo)"
+    elif proy_final >= mats_obj * 0.8:
+        estado = "leve_desvio"
+        estado_texto = "⚠️ Leve desvío (proyección cercana al objetivo)"
+    else:
+        estado = "riesgo_alto"
+        estado_texto = "🔴 Riesgo alto (proyección muy por debajo del objetivo)"
+    
     col1, col2 = st.columns([3, 1])
     col1.metric("Proyección matrículas finales", f"{int(proy_final)}", delta=f"±{int(margen_error)} (IC 95%)")
+    col2.metric("Estado", estado_texto)
     
-    # Métricas adicionales
-    st.subheader("Métricas de rendimiento")
-    col1, col2, col3 = st.columns(3)
-    
-    # Cálculo de CPA y CPL si hay datos de inversión
-    inversion_total = df_hist["inversion"].sum() if "inversion" in df_hist.columns else 0
-    cpa = inversion_total / mats_actuales if mats_actuales > 0 else 0
-    cpl = inversion_total / leads_actuales if leads_actuales > 0 else 0
-    
-    col1.metric("CPA (Costo por matrícula)", f"${cpa:.2f}")
-    col2.metric("CPL (Costo por lead)", f"${cpl:.2f}")
-    col3.metric("Ratio conversión", f"{ratio_conversión*100:.2f}%")
-
-    st.subheader("Observación ejecutiva")
-    if proy_final >= mats_obj:
-        st.success("✅ Si se mantiene el ritmo, se alcanzará el objetivo de matrículas.")
-    else:
-        deficit = mats_obj - proy_final
-        st.warning(f"⚠️ Ritmo insuficiente. Déficit estimado: {int(deficit)} matrículas. RECOMENDACIONES:")
-        st.markdown("""
-        * Incrementar presupuesto publicitario (especialmente en canales más eficientes).
-        * Reforzar seguimiento del equipo comercial.
-        * Revisar mensajes creativos de campañas existentes.
-        """)
-
-    st.subheader("Exportar análisis")
-    col1, col2 = st.columns(2)
-    # Excel export
-    if col1.button("Generar Excel"):
-        from io import BytesIO
-        buffer = BytesIO()
-        with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
-            df_hist.to_excel(writer, sheet_name="Histórico", index=False)
-            
-            # Crea sheet con resumen
-            resumen = pd.DataFrame({
-                "Métrica": ["Tiempo transcurrido", "Leads", "Matrículas", "Proyección final", "IC inferior", "IC superior"],
-                "Valor": [dias_transcurridos, leads_actuales, mats_actuales, proy_final, ic_lower, ic_upper],
-                "Objetivo": [tiempo_total, leads_obj, mats_obj, mats_obj, "-", "-"]
-            })
-            resumen.to_excel(writer, sheet_name="Resumen", index=False)
-        
-        buffer.seek(0)
-        st.download_button(
-            label="Descargar Excel",
-            data=buffer,
-            file_name="reporte_comercial.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="excel_comercial"
-        )
-    
-    # PDF export
-    if PDF_AVAILABLE and col2.button("Generar PDF", key="pdf_comercial"):
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=15)
-        pdf.cell(200, 10, txt="Reporte Comercial", ln=True, align="C")
-        pdf.set_font("Arial", size=10)
-        pdf.ln(5)
-        pdf.cell(0, 10, txt=f"Marca: {st.session_state.current_brand}", ln=True)
-        pdf.cell(0, 10, txt=f"Semana: {semana_actual} de {duracion_total}", ln=True)
-        pdf.cell(0, 10, txt=f"Tiempo transcurrido: {dias_transcurridos}/{tiempo_total} días", ln=True)
-        pdf.cell(0, 10, txt=f"Leads: {leads_actuales}/{leads_obj}", ln=True)
-        pdf.cell(0, 10, txt=f"Matrículas: {mats_actuales}/{mats_obj}", ln=True)
-        pdf.cell(0, 10, txt=f"Proyección: {int(proy_final)} ± {int(margen_error)}", ln=True)
-        
-        pdf_output = pdf.output(dest="S").encode("latin-1")
-        st.download_button("Descargar PDF", data=pdf_output, file_name="reporte_comercial.pdf", mime="application/pdf", key="pdf_comercial")
-
-
-def reporte_exploratorio_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
-    st.header("📊 Reporte Exploratorio / Diagnóstico")
-
-    if df_hist.empty:
-        st.warning("Cargue un histórico para explorar los datos.")
-        return
-
-    # Obtener configuración de la convocatoria
-    config = st.session_state.get("config_convocatoria", {
-        "semana_actual": datetime.datetime.now().isocalendar()[1],
-        "duracion_convocatoria": 13,
-        "semanas_restantes": 7,
-        "progreso": 0.5
-    })
-    
-    # Mostrar información de la convocatoria
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Semana actual", f"{config['semana_actual']} de {config['duracion_convocatoria']}")
-    col2.metric("Semanas restantes", f"{config['semanas_restantes']}")
-    col3.metric("Progreso", f"{config['progreso']*100:.1f}%")
-
-    st.subheader("Distribución de leads por canal")
-    if "canal" in df_hist.columns and "leads" in df_hist.columns:
-        dist = df_hist.groupby("canal")["leads"].sum().sort_values(ascending=False)
-        st.bar_chart(dist)
-
-    st.subheader("Matriz de correlación (lead, inversión, CPA, conversión)")
-    cols_corr = [c for c in ["leads", "inversion", "cpa", "conversion"] if c in df_hist.columns]
-    if len(cols_corr) >= 2:
-        corr = df_hist[cols_corr].corr()
-        st.dataframe(corr)
-
-    # Detección de anomalías simple: z-score en leads
-    col1, col2 = st.columns([3, 1])
-    col1.subheader("Detección de anomalías (z-score)")
-    if col2.button("❓ Ayuda anomalías", key="help_anomalias"):
-        show_help("anomalia")
-
-    if "leads" in df_hist.columns:
-        df_hist["z"] = (df_hist["leads"] - df_hist["leads"].mean()) / df_hist["leads"].std()
-        anomalies = df_hist[np.abs(df_hist["z"]) > 3]
-        if not anomalies.empty:
-            st.warning("Se detectaron valores atípicos en leads:")
-            st.dataframe(anomalies[[c for c in df_hist.columns if c != "z"]])
-        else:
-            st.success("No se detectaron anomalías significativas en leads.")
-
-    # Análisis temporal
-    st.subheader("Análisis temporal")
-    if "fecha" in df_hist.columns and "leads" in df_hist.columns:
+    # Visualización de tendencia
+    st.subheader("Tendencia de Cumplimiento")
+    # Calcular tendencia basada en datos semanales
+    if "fecha" in df_hist.columns and len(df_hist) > 1:
         df_hist["fecha"] = pd.to_datetime(df_hist["fecha"])
+        df_hist = df_hist.sort_values("fecha")
+        
+        # Agrupar por semana
         df_hist["dia_semana"] = df_hist["fecha"].dt.day_name()
         df_hist["mes"] = df_hist["fecha"].dt.month_name()
         
