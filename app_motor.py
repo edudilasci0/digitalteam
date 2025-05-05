@@ -1307,89 +1307,282 @@ def reporte_estrategico_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
         st.error(f"¡URGENTE! Quedan solo {semanas_restantes} semanas y se ha alcanzado solo el {metricas['Progreso Matriculas']*100:.1f}% del objetivo de matrículas.")
 
     # ======================================================
-    # 7. Exportación a PDF
+    # 7. Exportación a Excel mejorada
     # ======================================================
-    st.subheader("Exportar reportes")
-    col1, col2, col3 = st.columns(3)
-    
-    if PDF_AVAILABLE:
-        if col1.button("Descargar PDF resumen", key="pdf_estrategico"):
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", size=12)
-            pdf.cell(200, 10, txt="Reporte Estratégico", ln=True, align="C")
-            pdf.ln(5)
-            pdf.cell(0, 10, txt=f"Marca: {st.session_state.current_brand}", ln=True)
-            pdf.cell(0, 10, txt=f"Semana: {config['semana_actual']} de {config['duracion_convocatoria']} (Restantes: {config['semanas_restantes']})", ln=True)
-            for k, v in metricas.items():
-                pdf.cell(0, 10, txt=f"{k}: {v}", ln=True)
-            pdf_output = pdf.output(dest="S").encode("latin-1")
-            st.download_button("PDF", data=pdf_output, file_name="reporte_estrategico.pdf", mime="application/pdf", key="pdf_estrategico")
-    else:
-        col1.info("Instale 'fpdf' para exportar PDF.")
-
-    # 8. Exportación a PowerPoint
-    if PPT_AVAILABLE:
-        if col2.button("Descargar PowerPoint resumen", key="pptx_estrategico"):
-            prs = Presentation()
-            slide = prs.slides.add_slide(prs.slide_layouts[0])
-            title = slide.shapes.title
-            subtitle = slide.placeholders[1]
-            title.text = "Reporte Estratégico"
-            subtitle.text = f"Marca: {st.session_state.current_brand} - Semana {config['semana_actual']} de {config['duracion_convocatoria']}"
-
-            # Segunda diapositiva métricas
-            slide2 = prs.slides.add_slide(prs.slide_layouts[1])
-            slide2.shapes.title.text = "Métricas clave"
-            body = slide2.shapes.placeholders[1].text_frame
-            for k, v in metricas.items():
-                body.add_paragraph().text = f"{k}: {v:.2f}"
-
-            from io import BytesIO
-            ppt_buffer = BytesIO()
-            prs.save(ppt_buffer)
-            ppt_buffer.seek(0)
-            st.download_button("PPTX", data=ppt_buffer, file_name="reporte_estrategico.pptx", mime="application/vnd.openxmlformats-officedocument.presentationml.presentation", key="pptx_estrategico")
-    else:
-        col2.info("Instale 'python-pptx' para exportar PowerPoint.")
-    
-    # 9. Exportación a Excel
-    if col3.button("Descargar Excel detallado", key="excel_estrategico"):
+    st.subheader("Exportar informe")
+    if st.button("Descargar Excel Avanzado", key="excel_estrategico_avanzado"):
         from io import BytesIO
         buffer = BytesIO()
-        with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
-            # Datos históricos
-            df_hist.to_excel(writer, sheet_name="Histórico", index=False)
-            
-            # Métricas
-            pd.DataFrame({
-                "Métrica": list(metricas.keys()),
-                "Valor": list(metricas.values())
-            }).to_excel(writer, sheet_name="Métricas", index=False)
-            
-            # Escenarios
-            escenarios.to_excel(writer, sheet_name="Escenarios", index=False)
-            
-            # Comparativa por canal
-            if "df_canales" in locals():
-                df_canales.to_excel(writer, sheet_name="Canales", index=False)
-            
-            # Atribución multicanal si está disponible
-            if "df_atribucion" in locals() and not df_atribucion.empty:
-                df_atribucion.to_excel(writer, sheet_name="Atribución", index=False)
-            
-            # Predicciones si están disponibles
-            if "df_pred" in locals():
-                df_pred.to_excel(writer, sheet_name="Predicciones", index=False)
         
-        buffer.seek(0)
-        st.download_button(
-            label="Descargar Excel",
-            data=buffer,
-            file_name="reporte_estrategico.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="excel_estrategico_btn"
-        )
+        # Mensaje de procesamiento
+        with st.spinner("Generando Excel optimizado..."):
+            with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+                workbook = writer.book
+                
+                # Crear formatos atractivos
+                header_format = workbook.add_format({
+                    'bold': True,
+                    'text_wrap': True,
+                    'valign': 'top',
+                    'fg_color': '#1E3A8A',
+                    'font_color': 'white',
+                    'border': 1,
+                    'align': 'center'
+                })
+                
+                number_format = workbook.add_format({
+                    'num_format': '#,##0',
+                    'border': 1,
+                    'align': 'center'
+                })
+                
+                currency_format = workbook.add_format({
+                    'num_format': '$#,##0.00',
+                    'border': 1,
+                    'align': 'center'
+                })
+                
+                percent_format = workbook.add_format({
+                    'num_format': '0.00%',
+                    'border': 1,
+                    'align': 'center'
+                })
+                
+                title_format = workbook.add_format({
+                    'bold': True, 
+                    'font_size': 14, 
+                    'align': 'center',
+                    'valign': 'vcenter',
+                    'font_color': '#1E3A8A'
+                })
+                
+                subtitle_format = workbook.add_format({
+                    'bold': True, 
+                    'font_size': 12, 
+                    'align': 'center',
+                    'italic': True,
+                    'font_color': '#4B5563'
+                })
+                
+                border_format = workbook.add_format({
+                    'border': 1
+                })
+                
+                # Hoja 1: Resumen Ejecutivo
+                # --------------------------
+                resumen_data = {
+                    "Métrica": ["Fecha Reporte", "Marca", "Semana Actual", "Progreso Tiempo", 
+                               "Leads Obtenidos", "Meta Leads", "Matrículas Actuales", "Meta Matrículas",
+                               "CPA Actual", "CPL Actual", "Conversión Actual"],
+                    "Valor": [datetime.datetime.now().strftime("%d/%m/%Y"), 
+                             st.session_state.current_brand,
+                             f"{config['semana_actual']} de {config['duracion_convocatoria']}",
+                             f"{config['progreso']*100:.1f}%",
+                             df_hist["leads"].sum(),
+                             leads_obj,
+                             df_hist["matriculas"].sum(),
+                             mats_obj,
+                             f"${metricas['CPA']:.2f}",
+                             f"${metricas['CPL']:.2f}",
+                             f"{mats_actuales/leads_actuales*100:.2f}%" if leads_actuales > 0 else "0%"
+                            ]
+                }
+                
+                df_resumen = pd.DataFrame(resumen_data)
+                
+                # Primer hoja - Resumen Ejecutivo
+                df_resumen.to_excel(writer, sheet_name='Resumen Ejecutivo', index=False, startrow=2)
+                worksheet = writer.sheets['Resumen Ejecutivo']
+                
+                # Agregar título
+                worksheet.merge_range('A1:B1', f"REPORTE ESTRATÉGICO - {st.session_state.current_brand}", title_format)
+                worksheet.merge_range('A2:B2', f"Generado: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}", subtitle_format)
+                
+                # Aplicar formato a columnas
+                worksheet.set_column('A:A', 20)
+                worksheet.set_column('B:B', 25)
+                
+                # Aplicar estilos a cabeceras
+                for col_num, value in enumerate(df_resumen.columns.values):
+                    worksheet.write(2, col_num, value, header_format)
+                
+                # Hoja 2: Datos Históricos con formato
+                # -----------------------------------
+                if not df_hist.empty:
+                    df_hist.to_excel(writer, sheet_name="Datos Históricos", index=False, startrow=1)
+                    worksheet = writer.sheets['Datos Históricos']
+                    
+                    # Aplicar título
+                    worksheet.merge_range('A1:' + chr(65 + len(df_hist.columns) - 1) + '1', 
+                                         "DATOS HISTÓRICOS COMPLETOS", title_format)
+                    
+                    # Aplicar formato a cabeceras
+                    for col_num, value in enumerate(df_hist.columns.values):
+                        worksheet.write(1, col_num, value, header_format)
+                    
+                    # Aplicar formato a columnas numéricas
+                    for i, col in enumerate(df_hist.columns):
+                        # Ajustar ancho automáticamente
+                        max_len = max(df_hist[col].astype(str).str.len().max(), len(col))
+                        worksheet.set_column(i, i, max_len + 3)
+                        
+                        # Aplicar formatos según tipo de columna
+                        if col in ['inversion', 'CPA', 'CPL']:
+                            worksheet.set_column(i, i, max_len + 3, currency_format)
+                        elif col in ['leads', 'matriculas']:
+                            worksheet.set_column(i, i, max_len + 3, number_format)
+                        elif 'porcentaje' in col.lower() or 'tasa' in col.lower() or 'conversion' in col.lower():
+                            worksheet.set_column(i, i, max_len + 3, percent_format)
+                    
+                    # Agregar filtros automáticos
+                    worksheet.autofilter(1, 0, len(df_hist) + 1, len(df_hist.columns) - 1)
+                
+                # Hoja 3: Métricas por Canal
+                # -------------------------
+                if "df_canales" in locals() and not df_canales.empty:
+                    df_canales.to_excel(writer, sheet_name="Métricas por Canal", index=False, startrow=1)
+                    worksheet = writer.sheets['Métricas por Canal']
+                    
+                    # Título
+                    worksheet.merge_range('A1:' + chr(65 + len(df_canales.columns) - 1) + '1', 
+                                         "ANÁLISIS POR CANAL DE MARKETING", title_format)
+                    
+                    # Cabeceras
+                    for col_num, value in enumerate(df_canales.columns.values):
+                        worksheet.write(1, col_num, value, header_format)
+                    
+                    # Formato a columnas
+                    for i, col in enumerate(df_canales.columns):
+                        max_len = max(df_canales[col].astype(str).str.len().max(), len(col))
+                        worksheet.set_column(i, i, max_len + 3)
+                        
+                        if col in ['inversion', 'cpa']:
+                            worksheet.set_column(i, i, max_len + 3, currency_format)
+                        elif col in ['leads', 'matriculas']:
+                            worksheet.set_column(i, i, max_len + 3, number_format)
+                        elif col == 'conversion':
+                            worksheet.set_column(i, i, max_len + 3, percent_format)
+                
+                # Hoja 4: Escenarios Proyectados
+                # -----------------------------
+                escenarios.to_excel(writer, sheet_name="Escenarios", index=False, startrow=1)
+                worksheet = writer.sheets['Escenarios']
+                
+                # Título
+                worksheet.merge_range('A1:' + chr(65 + len(escenarios.columns) - 1) + '1', 
+                                     "PROYECCIÓN DE ESCENARIOS", title_format)
+                
+                # Formato cabeceras
+                for col_num, value in enumerate(escenarios.columns.values):
+                    worksheet.write(1, col_num, value, header_format)
+                
+                # Ajustar columnas
+                for i, col in enumerate(escenarios.columns):
+                    max_len = max(escenarios[col].astype(str).str.len().max(), len(col))
+                    worksheet.set_column(i, i, max_len + 3)
+                
+                # Hoja 5: Atribución (si existe)
+                # ----------------------------
+                if "df_atribucion" in locals() and not df_atribucion.empty:
+                    df_atribucion.to_excel(writer, sheet_name="Atribución", index=False, startrow=1)
+                    worksheet = writer.sheets['Atribución']
+                    
+                    # Título
+                    worksheet.merge_range('A1:' + chr(65 + len(df_atribucion.columns) - 1) + '1', 
+                                         f"ATRIBUCIÓN MULTICANAL - MODELO {modelo_seleccionado.upper()}", title_format)
+                    
+                    # Cabeceras
+                    for col_num, value in enumerate(df_atribucion.columns.values):
+                        worksheet.write(1, col_num, value, header_format)
+                    
+                    # Formato columnas
+                    for i, col in enumerate(df_atribucion.columns):
+                        max_len = max(df_atribucion[col].astype(str).str.len().max(), len(col))
+                        worksheet.set_column(i, i, max_len + 3)
+                        
+                        if col == 'porcentaje':
+                            worksheet.set_column(i, i, max_len + 3, percent_format)
+                    
+                    # Añadimos un gráfico de pastel para atribución
+                    chart_atrib = workbook.add_chart({'type': 'pie'})
+                    
+                    # Configurar los datos del gráfico (ajustando filas)
+                    chart_atrib.add_series({
+                        'name': 'Atribución por Canal',
+                        'categories': ['Atribución', 2, 0, 1 + len(df_atribucion), 0],
+                        'values': ['Atribución', 2, 1, 1 + len(df_atribucion), 1],
+                        'data_labels': {'percentage': True, 'position': 'outside_end'},
+                    })
+                    
+                    # Configurar título y posición
+                    chart_atrib.set_title({'name': 'Distribución de Atribución por Canal'})
+                    chart_atrib.set_style(10)
+                    worksheet.insert_chart('F2', chart_atrib, {'x_offset': 25, 'y_offset': 10, 'x_scale': 1.5, 'y_scale': 1.5})
+                
+                # Hoja 6: Predicciones ML (si existe)
+                # ---------------------------------
+                if "df_pred" in locals() and not df_pred.empty:
+                    df_pred.to_excel(writer, sheet_name="Predicciones ML", index=False, startrow=1)
+                    worksheet = writer.sheets['Predicciones ML']
+                    
+                    # Título
+                    worksheet.merge_range('A1:' + chr(65 + len(df_pred.columns) - 1) + '1', 
+                                         "PREDICCIONES MACHINE LEARNING", title_format)
+                    
+                    # Cabeceras
+                    for col_num, value in enumerate(df_pred.columns.values):
+                        worksheet.write(1, col_num, value, header_format)
+                    
+                    # Formato columnas
+                    for i, col in enumerate(df_pred.columns):
+                        worksheet.set_column(i, i, 15, number_format)
+                    
+                    # Crear gráfico de líneas para predicciones
+                    chart = workbook.add_chart({'type': 'line'})
+                    
+                    # Predicción central
+                    chart.add_series({
+                        'name': 'Predicción',
+                        'categories': ['Predicciones ML', 2, 0, 1 + len(df_pred), 0],
+                        'values': ['Predicciones ML', 2, 1, 1 + len(df_pred), 1],
+                        'line': {'color': 'blue', 'width': 2.5},
+                        'marker': {'type': 'circle', 'size': 5, 'fill': {'color': 'blue'}}
+                    })
+                    
+                    # Límite inferior
+                    chart.add_series({
+                        'name': 'Límite Inferior',
+                        'categories': ['Predicciones ML', 2, 0, 1 + len(df_pred), 0],
+                        'values': ['Predicciones ML', 2, 2, 1 + len(df_pred), 2],
+                        'line': {'color': 'orange', 'width': 1, 'dash_type': 'dash'},
+                    })
+                    
+                    # Límite superior
+                    chart.add_series({
+                        'name': 'Límite Superior',
+                        'categories': ['Predicciones ML', 2, 0, 1 + len(df_pred), 0],
+                        'values': ['Predicciones ML', 2, 3, 1 + len(df_pred), 3],
+                        'line': {'color': 'green', 'width': 1, 'dash_type': 'dash'},
+                    })
+                    
+                    # Configurar gráfico
+                    chart.set_title({'name': 'Proyección de Matrículas'})
+                    chart.set_x_axis({'name': 'Semana +'})
+                    chart.set_y_axis({'name': 'Matrículas Proyectadas'})
+                    chart.set_style(42)
+                    worksheet.insert_chart('F2', chart, {'x_offset': 25, 'y_offset': 10, 'x_scale': 1.5, 'y_scale': 1.5})
+            
+            # Botón de descarga
+            fecha_actual = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+            buffer.seek(0)
+            st.download_button(
+                label="⬇️ Descargar Excel Completo",
+                data=buffer,
+                file_name=f"reporte_estrategico_{st.session_state.current_brand}_{fecha_actual}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="excel_estrategico_btn"
+            )
+            st.success("✅ Reporte Excel generado correctamente con formatos optimizados y gráficos interactivos.")
 
 
 def reporte_comercial_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
@@ -1543,36 +1736,304 @@ def reporte_comercial_ui(df_plan: pd.DataFrame, df_hist: pd.DataFrame):
         st.info("Se requiere columna 'fecha' para realizar análisis temporal.")
 
     # Exportar
-    st.subheader("Exportar análisis")
-    col1, col2 = st.columns(2)
-    if col1.button("Descargar Excel diagnóstico", key="excel_diagnostico"):
+    st.subheader("Exportar informe")
+    if st.button("Descargar Excel Avanzado", key="excel_comercial_avanzado"):
         from io import BytesIO
         buffer = BytesIO()
-        with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
-            df_hist.to_excel(writer, sheet_name="Histórico", index=False)
-            if len(cols_corr) >= 2:
-                corr.to_excel(writer, sheet_name="Correlación")
-        buffer.seek(0)
-        st.download_button("Excel", data=buffer, file_name="diagnostico.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="excel_diagnostico")
-    
-    if PDF_AVAILABLE and col2.button("Generar PDF resumen", key="pdf_diagnostico"):
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=15)
-        pdf.cell(200, 10, txt="Diagnóstico Exploratorio", ln=True, align="C")
-        pdf.set_font("Arial", size=10)
-        pdf.ln(5)
-        pdf.cell(0, 10, txt=f"Marca: {st.session_state.current_brand}", ln=True)
-        pdf.cell(0, 10, txt=f"Semana: {config['semana_actual']} de {config['duracion_convocatoria']}", ln=True)
-        if "leads" in df_hist.columns:
-            pdf.cell(0, 10, txt=f"Total leads: {df_hist['leads'].sum()}", ln=True)
-        if "dia_semana" in locals() and "mejor_dia" in locals():
-            pdf.cell(0, 10, txt=f"Mejor día captación: {mejor_dia}", ln=True)
-        if "anomalies" in locals() and not anomalies.empty:
-            pdf.cell(0, 10, txt=f"Anomalías detectadas: {len(anomalies)}", ln=True)
         
-        pdf_output = pdf.output(dest="S").encode("latin-1")
-        st.download_button("Descargar PDF", data=pdf_output, file_name="diagnostico.pdf", mime="application/pdf", key="pdf_diagnostico")
+        # Mensaje de procesamiento
+        with st.spinner("Generando Excel comercial optimizado..."):
+            with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+                workbook = writer.book
+                
+                # Crear formatos atractivos para Excel
+                header_format = workbook.add_format({
+                    'bold': True,
+                    'text_wrap': True,
+                    'valign': 'top',
+                    'fg_color': '#1E3A8A',
+                    'font_color': 'white',
+                    'border': 1,
+                    'align': 'center'
+                })
+                
+                number_format = workbook.add_format({
+                    'num_format': '#,##0',
+                    'border': 1,
+                    'align': 'center'
+                })
+                
+                currency_format = workbook.add_format({
+                    'num_format': '$#,##0.00',
+                    'border': 1,
+                    'align': 'center'
+                })
+                
+                percent_format = workbook.add_format({
+                    'num_format': '0.00%',
+                    'border': 1,
+                    'align': 'center'
+                })
+                
+                title_format = workbook.add_format({
+                    'bold': True, 
+                    'font_size': 14, 
+                    'align': 'center',
+                    'valign': 'vcenter',
+                    'font_color': '#1E3A8A'
+                })
+                
+                subtitle_format = workbook.add_format({
+                    'bold': True, 
+                    'font_size': 12, 
+                    'align': 'center',
+                    'italic': True,
+                    'font_color': '#4B5563'
+                })
+                
+                border_format = workbook.add_format({
+                    'border': 1
+                })
+                
+                # Formato para barras de progreso
+                progress_red = workbook.add_format({
+                    'bg_color': '#FFAAAA',
+                    'pattern': 1,
+                    'border': 1
+                })
+                
+                progress_yellow = workbook.add_format({
+                    'bg_color': '#FFFFAA',
+                    'pattern': 1,
+                    'border': 1
+                })
+                
+                progress_green = workbook.add_format({
+                    'bg_color': '#AAFFAA',
+                    'pattern': 1,
+                    'border': 1
+                })
+                
+                # Hoja 1: Resumen General
+                # ----------------------
+                resumen_data = {
+                    "Métrica": ["Fecha Reporte", "Marca", "Semana Actual", "Semanas Restantes", 
+                               "Progreso Tiempo", "Leads Generados", "Meta Leads", 
+                               "Matrículas Actuales", "Meta Matrículas",
+                               "Estado Campaña", "Proyección Matrículas"],
+                    "Valor": [datetime.datetime.now().strftime("%d/%m/%Y"), 
+                             st.session_state.current_brand,
+                             f"{semana_actual} de {duracion_total}",
+                             f"{semanas_restantes}",
+                             f"{progreso*100:.1f}%",
+                             leads_actuales,
+                             leads_obj,
+                             mats_actuales,
+                             mats_obj,
+                             estado_texto,
+                             f"{int(proy_final)} (±{int(margen_error)})"
+                            ]
+                }
+                
+                df_resumen = pd.DataFrame(resumen_data)
+                
+                # Escribir a Excel
+                df_resumen.to_excel(writer, sheet_name='Resumen', index=False, startrow=2)
+                worksheet = writer.sheets['Resumen']
+                
+                # Agregar título
+                worksheet.merge_range('A1:B1', f"REPORTE COMERCIAL SEMANAL - {st.session_state.current_brand}", title_format)
+                worksheet.merge_range('A2:B2', f"Generado: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}", subtitle_format)
+                
+                # Aplicar formato a columnas
+                worksheet.set_column('A:A', 20)
+                worksheet.set_column('B:B', 25)
+                
+                # Aplicar estilos a cabeceras
+                for col_num, value in enumerate(df_resumen.columns.values):
+                    worksheet.write(2, col_num, value, header_format)
+                
+                # Hoja 2: Datos Históricos
+                # -----------------------
+                if not df_hist.empty:
+                    df_hist.to_excel(writer, sheet_name="Datos Históricos", index=False, startrow=1)
+                    worksheet = writer.sheets['Datos Históricos']
+                    
+                    # Aplicar título
+                    worksheet.merge_range('A1:' + chr(65 + len(df_hist.columns) - 1) + '1', 
+                                         "DATOS HISTÓRICOS COMPLETOS", title_format)
+                    
+                    # Aplicar formato a cabeceras
+                    for col_num, value in enumerate(df_hist.columns.values):
+                        worksheet.write(1, col_num, value, header_format)
+                    
+                    # Aplicar formato a columnas numéricas
+                    for i, col in enumerate(df_hist.columns):
+                        # Ajustar ancho automáticamente
+                        max_len = max(df_hist[col].astype(str).str.len().max(), len(col))
+                        worksheet.set_column(i, i, max_len + 3)
+                        
+                        # Aplicar formatos según tipo de columna
+                        if col in ['inversion', 'CPA', 'CPL']:
+                            worksheet.set_column(i, i, max_len + 3, currency_format)
+                        elif col in ['leads', 'matriculas']:
+                            worksheet.set_column(i, i, max_len + 3, number_format)
+                        elif 'porcentaje' in col.lower() or 'tasa' in col.lower() or 'conversion' in col.lower():
+                            worksheet.set_column(i, i, max_len + 3, percent_format)
+                
+                # Hoja 3: Barras de Progreso
+                # ------------------------
+                barras_data = {
+                    "Elemento": ["Tiempo transcurrido", "Leads entregados", "Matrículas confirmadas"],
+                    "Valor Actual": [dias_transcurridos, leads_actuales, mats_actuales],
+                    "Valor Objetivo": [tiempo_total, leads_obj, mats_obj],
+                    "Porcentaje": [
+                        dias_transcurridos / tiempo_total if tiempo_total else 0,
+                        leads_actuales / leads_obj if leads_obj else 0,
+                        mats_actuales / mats_obj if mats_obj else 0
+                    ]
+                }
+                
+                df_barras = pd.DataFrame(barras_data)
+                df_barras.to_excel(writer, sheet_name="Progreso", index=False, startrow=1)
+                worksheet = writer.sheets['Progreso']
+                
+                # Aplicar título
+                worksheet.merge_range('A1:D1', "BARRAS DE PROGRESO", title_format)
+                
+                # Aplicar formato a cabeceras
+                for col_num, value in enumerate(df_barras.columns.values):
+                    worksheet.write(1, col_num, value, header_format)
+                
+                # Ajustar ancho de columnas
+                worksheet.set_column('A:A', 20)
+                worksheet.set_column('B:B', 15)
+                worksheet.set_column('C:C', 15)
+                worksheet.set_column('D:D', 15)
+                
+                # Aplicar formato de porcentaje a la columna de porcentaje
+                for i in range(len(df_barras)):
+                    worksheet.write(i+2, 3, df_barras["Porcentaje"].iloc[i], percent_format)
+                
+                # Crear barras de progreso visuales (fila 10 en adelante)
+                worksheet.write(9, 0, "Barras de Progreso Visual", subtitle_format)
+                
+                for i, row in enumerate(df_barras.itertuples()):
+                    elem_name = row.Elemento
+                    pct = row.Porcentaje
+                    
+                    # Determinar color basado en porcentaje
+                    formato = progress_green if pct >= 0.9 else (progress_yellow if pct >= 0.6 else progress_red)
+                    
+                    # Escribir nombre de elemento y crear barra
+                    worksheet.write(i+10, 0, elem_name)
+                    cells_filled = int(pct * 10)  # Barra de 10 celdas
+                    
+                    # Dibujar progreso como celdas coloreadas
+                    for j in range(cells_filled):
+                        worksheet.write(i+10, j+1, "", formato)
+                    
+                    # Escribir porcentaje al final de la barra
+                    worksheet.write(i+10, 12, f"{pct*100:.1f}%")
+                
+                # Hoja 4: Tendencia por Día
+                # -----------------------
+                if "dia_semana" in locals() and "leads_dia" in locals() and not leads_dia.empty:
+                    df_dias = pd.DataFrame({"Día": leads_dia.index, "Promedio Leads": leads_dia.values})
+                    df_dias.to_excel(writer, sheet_name="Tendencia por Día", index=False, startrow=1)
+                    worksheet = writer.sheets['Tendencia por Día']
+                    
+                    # Aplicar título
+                    worksheet.merge_range('A1:B1', "CAPTACIÓN POR DÍA DE LA SEMANA", title_format)
+                    
+                    # Aplicar formato a cabeceras
+                    for col_num, value in enumerate(df_dias.columns.values):
+                        worksheet.write(1, col_num, value, header_format)
+                    
+                    # Ajustar ancho de columnas
+                    worksheet.set_column('A:A', 15)
+                    worksheet.set_column('B:B', 15)
+                    
+                    # Crear gráfico de columnas
+                    chart = workbook.add_chart({'type': 'column'})
+                    chart.add_series({
+                        'name': 'Leads por día',
+                        'categories': ['Tendencia por Día', 2, 0, 1 + len(df_dias), 0],
+                        'values': ['Tendencia por Día', 2, 1, 1 + len(df_dias), 1],
+                        'data_labels': {'value': True}
+                    })
+                    
+                    chart.set_title({'name': 'Captación por Día de la Semana'})
+                    chart.set_x_axis({'name': 'Día'})
+                    chart.set_y_axis({'name': 'Promedio Leads'})
+                    chart.set_style(11)  # Estilo más moderno
+                    
+                    worksheet.insert_chart('D2', chart, {'x_offset': 25, 'y_offset': 10, 'x_scale': 1.5, 'y_scale': 1.2})
+                
+                # Hoja 5: Proyecciones
+                # -----------------
+                proyecciones_data = {
+                    "Métrica": ["Leads Actuales", "Leads Proyección Final", 
+                               "Matrículas Actuales", "Matrículas Proyección por Leads", 
+                               "Matrículas Proyección por Tiempo", "Matrículas Proyección Final",
+                               "Límite Inferior", "Límite Superior", "Meta Objetivo"],
+                    "Valor": [leads_actuales, proy_leads_final, 
+                             mats_actuales, proy_mats_por_leads,
+                             proy_mats_por_tiempo, proy_final, 
+                             ic_lower, ic_upper, mats_obj]
+                }
+                
+                df_proyecciones = pd.DataFrame(proyecciones_data)
+                df_proyecciones.to_excel(writer, sheet_name="Proyecciones", index=False, startrow=1)
+                worksheet = writer.sheets['Proyecciones']
+                
+                # Aplicar título
+                worksheet.merge_range('A1:B1', "PROYECCIONES FINALES", title_format)
+                
+                # Aplicar formato a cabeceras
+                for col_num, value in enumerate(df_proyecciones.columns.values):
+                    worksheet.write(1, col_num, value, header_format)
+                
+                # Ajustar ancho de columnas y aplicar formatos
+                worksheet.set_column('A:A', 25)
+                worksheet.set_column('B:B', 15, number_format)
+                
+                # Crear gráfico para proyecciones
+                chart = workbook.add_chart({'type': 'column'})
+                
+                # Series para el gráfico de proyecciones
+                chart.add_series({
+                    'name': 'Actual vs Proyectado',
+                    'categories': ['Proyecciones', 3, 0, 4, 0],  # Solo matrículas actuales y finales
+                    'values': ['Proyecciones', 3, 1, 4, 1],
+                    'data_labels': {'value': True}
+                })
+                
+                # Añadir línea para el objetivo
+                chart.add_series({
+                    'name': 'Objetivo',
+                    'categories': ['Proyecciones', 8, 0, 8, 0],  # Solo la fila de objetivo
+                    'values': ['Proyecciones', 8, 1, 8, 1],
+                    'type': 'line',
+                    'line': {'color': 'red', 'width': 2, 'dash_type': 'dash'},
+                    'marker': {'type': 'square', 'size': 8}
+                })
+                
+                chart.set_title({'name': 'Matrículas: Actual vs Proyección vs Objetivo'})
+                chart.set_style(42)
+                worksheet.insert_chart('D2', chart, {'x_offset': 25, 'y_offset': 10, 'x_scale': 1.5, 'y_scale': 1.2})
+                
+            # Botón de descarga
+            fecha_actual = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+            buffer.seek(0)
+            st.download_button(
+                label="⬇️ Descargar Excel Completo",
+                data=buffer,
+                file_name=f"reporte_comercial_{st.session_state.current_brand}_{fecha_actual}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="excel_comercial_btn"
+            )
+            st.success("✅ Reporte comercial Excel generado correctamente con formatos optimizados y gráficos interactivos.")
 
 
 # ============================================================
