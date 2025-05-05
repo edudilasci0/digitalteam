@@ -151,16 +151,29 @@ Para análisis detallado y diagnóstico de datos:
 
 ## Exportación de Datos
 
-El sistema permite exportar los análisis en diferentes formatos:
+El sistema permite exportar todos los análisis en formato Excel avanzado:
 
-- **Excel**: Datos completos para análisis posterior
-- **PDF**: Informes ejecutivos para distribución
-- **PowerPoint**: Presentaciones para reuniones estratégicas
+- **Excel profesional**: Reportes completos con múltiples hojas y gráficos interactivos
+  - Incluye resumen ejecutivo
+  - Datos históricos con formato
+  - Visualizaciones integradas en el archivo
+  - Barras de progreso visuales
+  - Formatos condicionales automatizados
 
 Para exportar:
 1. Navegue al reporte deseado
-2. Utilice los botones de exportación en la parte inferior
+2. Utilice el botón "Descargar Excel Avanzado" en la parte inferior
 3. El archivo se generará y podrá descargarse automáticamente
+
+### Características de la exportación Excel
+
+- **Formato profesional**: Diseño visual con colores corporativos y estilo coherente
+- **Múltiples hojas organizadas**: Datos separados por categorías y análisis
+- **Gráficos interactivos**: Visualizaciones que pueden manipularse directamente en Excel
+- **Barras de progreso visuales**: Representación gráfica con códigos de color según avance
+- **Formatos condicionales**: Destacan automáticamente valores importantes o fuera de rango
+- **Filtros automáticos**: Facilitan el análisis y exploración de los datos
+- **Ancho de columna optimizado**: Ajuste automático según el contenido
 
 ## Modelos Predictivos
 
@@ -183,7 +196,7 @@ R: Los archivos deben estar en formato CSV con separador coma. Las columnas mín
 
 **P: ¿Puedo exportar los gráficos generados?**
 
-R: Sí, puede exportar los análisis completos en formato PDF, PowerPoint o Excel desde cada reporte.
+R: Sí, todos los gráficos y análisis se incluyen en el archivo Excel exportado. Los gráficos interactivos permiten su manipulación directamente en Excel.
 
 **P: ¿Cómo funciona la predicción de matrículas?**
 
@@ -203,8 +216,8 @@ El sistema necesita suficientes datos históricos (al menos 10 registros) con la
 
 Pruebe a utilizar un navegador moderno (Chrome, Firefox, Edge) y asegúrese de que está actualizado.
 
-**Error en la exportación de archivos**
+**Problemas con la exportación Excel**
 
-Verifique que tiene instaladas las dependencias opcionales necesarias:
-- Para PDF: `pip install fpdf`
-- Para PowerPoint: `pip install python-pptx` 
+- Verifique que tiene XlsxWriter instalado: `pip install xlsxwriter`
+- Asegúrese de que su version de pandas es compatible con la exportación a Excel
+- Para archivos grandes, aumente el tiempo de espera del navegador 

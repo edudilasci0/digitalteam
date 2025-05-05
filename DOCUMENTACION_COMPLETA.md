@@ -122,13 +122,26 @@ data/
    - Barras de progreso: Visualización de avance hacia los objetivos
    - Proyección lineal: Estimación de resultados finales con intervalos de confianza
    - Observaciones ejecutivas: Conclusiones y recomendaciones automatizadas
-   - Exportación a Excel: Descarga de datos procesados para análisis adicional
+   - Exportación a Excel avanzada: Descarga de reportes optimizados con gráficos interactivos
 
 3. **Reporte Exploratorio (Diagnóstico)**
    - Distribución por canal: Análisis de la distribución de leads por origen
    - Matriz de correlación: Relaciones entre variables principales
    - Detección de anomalías: Identificación de valores atípicos mediante Z-score
    - Análisis temporal: Patrones por día de la semana y tendencias
+
+### Exportación Excel Mejorada
+
+Todos los reportes incluyen exportación a Excel con características avanzadas:
+
+- **Formato profesional**: Diseño visual con colores corporativos y estilo coherente
+- **Múltiples hojas organizadas**: Datos separados por categorías y análisis
+- **Gráficos interactivos**: Visualizaciones que pueden manipularse directamente en Excel
+- **Barras de progreso visuales**: Representación gráfica con códigos de color según avance
+- **Formatos condicionales**: Destacan automáticamente valores importantes o fuera de rango
+- **Filtros automáticos**: Facilitan el análisis y exploración de los datos
+- **Ancho de columna optimizado**: Ajuste automático según el contenido
+- **Formato numérico inteligente**: Moneda, porcentaje o número según el tipo de dato
 
 ## Instrucciones de Uso
 
@@ -191,7 +204,7 @@ Una vez cargados los datos, navegue entre los diferentes reportes usando el men�
    - Utilice este reporte para decisiones de marketing y planificación
    - Los gráficos muestran tendencias y proyecciones
    - Las métricas clave se muestran en la parte superior
-   - Puede exportar a PDF o PowerPoint
+   - Exporte a Excel con el botón "Descargar Excel Avanzado"
 
 2. **Reporte Comercial**
    - Utilice este reporte para seguimiento semanal
@@ -267,7 +280,7 @@ El Motor de Decisión Educativo y Predictivo ha evolucionado a una arquitectura 
 
 1. **Mejora de modelos ML**: Implementar más algoritmos predictivos
 2. **Internacionalización**: Soporte para múltiples idiomas
-3. **Exportación avanzada**: Mejorar formatos de reportes exportados
+3. **Mejoras en Excel**: Continuar optimizando formatos y visualizaciones
 4. **API REST**: Desarrollar endpoints para integración con otros sistemas
 
 ## Solución de Problemas
@@ -283,10 +296,10 @@ El Motor de Decisión Educativo y Predictivo ha evolucionado a una arquitectura 
 3. **Los gráficos no se visualizan correctamente**
    - Pruebe a utilizar un navegador moderno (Chrome, Firefox, Edge) y asegúrese de que está actualizado.
 
-4. **Error en la exportación de archivos**
-   - Verifique que tiene instaladas las dependencias opcionales necesarias:
-     - Para PDF: `pip install fpdf`
-     - Para PowerPoint: `pip install python-pptx`
+4. **Problemas con la exportación Excel**
+   - Verifique que tiene XlsxWriter instalado: `pip install xlsxwriter`
+   - Asegúrese de que su version de pandas es compatible con la exportación a Excel
+   - Evite nombres de archivos muy largos o con caracteres especiales
 
 ### Cómo solicitar ayuda
 
