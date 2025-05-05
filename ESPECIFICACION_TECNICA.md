@@ -27,22 +27,73 @@ El flujo de datos sigue un patrón MVC modificado:
 
 ## 2. Algoritmos de Estimación de Leads
 
-### 2.1 Proyección Lineal Proporcional
+### 2.1 Proyección Lineal Proporcional con Intervalos de Confianza
 ```python
-def proyeccion_lineal(leads_actuales, ratio_tiempo):
-    """Proyección simple basada en el tiempo transcurrido"""
+def proyeccion_lineal_con_intervalos(leads_actuales, ratio_tiempo, historico_leads=None):
+    """Proyección simple basada en el tiempo transcurrido con intervalos de confianza"""
     if ratio_tiempo > 0:
-        return leads_actuales / ratio_tiempo
-    return 0
+        # Predicción central
+        proyeccion_central = leads_actuales / ratio_tiempo
+        
+        # Intervalos de confianza basados en variabilidad histórica
+        if historico_leads is not None and len(historico_leads) > 5:
+            # Calcular coeficiente de variación histórico
+            cv = historico_leads.std() / historico_leads.mean()
+            
+            # Ajustar variabilidad según tiempo restante
+            factor_tiempo = np.sqrt(1 - ratio_tiempo)  # Mayor incertidumbre al inicio
+            
+            # Calcular intervalos
+            margen = proyeccion_central * cv * factor_tiempo
+            
+            # Intervalos con 95% de confianza (aproximado)
+            limite_inferior = max(0, proyeccion_central - 1.96 * margen)
+            limite_superior = proyeccion_central + 1.96 * margen
+            
+            return proyeccion_central, (limite_inferior, limite_superior)
+        else:
+            # Intervalos simplificados por defecto (±15%)
+            return proyeccion_central, (proyeccion_central * 0.85, proyeccion_central * 1.15)
+    return 0, (0, 0)
 ```
 
-Esta función implementa el principio de proporcionalidad temporal: si se han generado X leads en Y% del tiempo, se proyecta que se generarán X/Y leads al completar el 100% del tiempo.
+Esta implementación mejorada incluye obligatoriamente intervalos de confianza para la proyección de leads, que se calculan utilizando:
+- El coeficiente de variación histórico cuando hay suficientes datos disponibles
+- Un factor de tiempo que amplía los intervalos al inicio de la campaña (mayor incertidumbre)
+- Un valor z=1.96 para un nivel de confianza del 95%
 
-### 2.2 Modelo de Series Temporales
+### 2.2 Modelo de Series Temporales con Intervalos
 El sistema implementa un análisis de tendencia utilizando:
 - Descomposición de series temporales (tendencia, estacionalidad, residuo)
 - Análisis de patrones semanales con corrección según día de la semana
 - Ponderación de datos recientes (mayor influencia de datos recientes)
+- **Intervalos de confianza bootstrap** aplicando remuestreo de los residuos
+
+```python
+def proyeccion_series_temporales(df_historico, periodos_futuros=4):
+    """
+    Proyección basada en descomposición de series temporales
+    con intervalos de confianza
+    """
+    # Crear y ajustar modelo de series temporales
+    modelo = ExponentialSmoothing(
+        df_historico['leads'],
+        trend='add',
+        seasonal='add',
+        seasonal_periods=7  # Patrón semanal
+    ).fit()
+    
+    # Predicción central
+    prediccion = modelo.forecast(periodos_futuros)
+    
+    # Generar intervalos de confianza
+    intervalos = modelo.get_prediction(
+        start=len(df_historico), 
+        end=len(df_historico)+periodos_futuros-1
+    ).conf_int(alpha=0.05)  # 95% de confianza
+    
+    return prediccion, (intervalos.iloc[:, 0], intervalos.iloc[:, 1])
+```
 
 El modelo detecta patrones como:
 - Estacionalidad semanal (días de mayor rendimiento)
@@ -51,14 +102,36 @@ El modelo detecta patrones como:
 
 ## 3. Generación de Escenarios
 
-### 3.1 Implementación Matemática
+### 3.1 Implementación Matemática con Intervalos de Confianza
 ```python
-def calcular_escenarios(base_proyeccion, tasa_conversion):
-    """Genera tres escenarios de proyección"""
+def calcular_escenarios_con_intervalos(base_proyeccion, intervalos_base, tasa_conversion):
+    """Genera tres escenarios de proyección con intervalos de confianza"""
+    # Desempaquetar intervalos base
+    limite_inferior_base, limite_superior_base = intervalos_base
+    
+    # Calcular margen de variación proporcional
+    margen_proporcional = (limite_superior_base - limite_inferior_base) / (2 * base_proyeccion) if base_proyeccion > 0 else 0.15
+    
+    # Generar escenarios con sus respectivos intervalos
     escenarios = {
-        "actual": base_proyeccion,
-        "optimista": base_proyeccion * 1.05,  # Mejora del 5% en conversión
-        "agresivo": base_proyeccion * 1.2     # Aumento del 20% en inversión
+        "actual": {
+            "central": base_proyeccion,
+            "intervalos": (limite_inferior_base, limite_superior_base)
+        },
+        "optimista": {
+            "central": base_proyeccion * 1.05,  # Mejora del 5% en conversión
+            "intervalos": (
+                base_proyeccion * 1.05 * (1 - margen_proporcional),
+                base_proyeccion * 1.05 * (1 + margen_proporcional)
+            )
+        },
+        "agresivo": {
+            "central": base_proyeccion * 1.2,     # Aumento del 20% en inversión
+            "intervalos": (
+                base_proyeccion * 1.2 * (1 - margen_proporcional * 1.2),  # Mayor incertidumbre en escenario agresivo
+                base_proyeccion * 1.2 * (1 + margen_proporcional * 1.2)
+            )
+        }
     }
     return escenarios
 ```
@@ -128,6 +201,41 @@ El sistema ajusta los intervalos según las semanas restantes:
   ```
 
 Este enfoque reconoce que la incertidumbre aumenta con el horizonte de predicción, ampliando los intervalos cuando queda más tiempo para el final de la campaña.
+
+### 4.3 Validación y Calibración de Intervalos
+El sistema evalúa y ajusta periódicamente la calidad de los intervalos de confianza:
+
+```python
+def validar_intervalos_confianza(predicciones_historicas, intervalos_historicos, resultados_reales):
+    """
+    Evalúa qué porcentaje de resultados reales cayeron dentro de los intervalos predichos
+    y calibra los intervalos futuros
+    """
+    # Contar cuántos resultados reales cayeron dentro del intervalo
+    dentro_intervalo = 0
+    
+    for i, real in enumerate(resultados_reales):
+        limite_inf, limite_sup = intervalos_historicos[i]
+        if limite_inf <= real <= limite_sup:
+            dentro_intervalo += 1
+    
+    # Calcular porcentaje de acierto
+    porcentaje_acierto = dentro_intervalo / len(resultados_reales) * 100
+    
+    # Factor de calibración para ajustar futuros intervalos
+    # Si el porcentaje es muy bajo, ampliamos los intervalos
+    # Si es muy alto, los reducimos
+    factor_calibracion = 1.0
+    
+    if porcentaje_acierto < 90:  # Menos del 90% dentro del intervalo
+        factor_calibracion = 1 + (90 - porcentaje_acierto) / 100
+    elif porcentaje_acierto > 98:  # Más del 98% dentro del intervalo
+        factor_calibracion = 0.95  # Reducción ligera
+    
+    return porcentaje_acierto, factor_calibracion
+```
+
+Esta función permite que el sistema aprenda de sus propias predicciones y mejore continuamente la precisión de sus intervalos de confianza.
 
 ## 5. Implementación de Visualizaciones Avanzadas en Excel
 
